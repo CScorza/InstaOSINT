@@ -1,0 +1,5 @@
+requests
+phonenumbers
+pycountry
+ttkthemes
+Pillow
