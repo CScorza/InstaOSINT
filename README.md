@@ -1,6 +1,6 @@
 
+![screen](https://github.com/user-attachments/assets/21b00a02-13ed-42cf-93ec-e8c950a49d00)
 
-# 🕵️ CScorza - InstaOSINT
 ## 🚀 OSINT Tool per l'Analisi di Profili Instagram e Ricerca Globale
 
 ## 🇮🇹 ITALIANO: Dettagli del Progetto
@@ -87,4 +87,4 @@ python InstaOSINT.py
 
 This project was built upon foundational work in the field of OSINT analysis.
 
-Special thanks to **Megadose** and their powerful tool **Toutatis**, which served as inspiration and a foundational base for developing some core analysis logic within this project.
+Special thanks to [**Megadose**](https://github.com/megadose) and their powerful tool [**Toutatis**](https://github.com/megadose/Toutatis), which served as inspiration and a foundational base for developing some core analysis logic within this project.
