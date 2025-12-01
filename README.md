@@ -1,5 +1,4 @@
-
-![screen](https://github.com/user-attachments/assets/21b00a02-13ed-42cf-93ec-e8c950a49d00)
+![screen](https://github.com/user-attachments/assets/11fc48df-85c3-4f0e-b429-b58d14f1abc6)
 
 ## 🚀 OSINT Tool per l'Analisi di Profili Instagram e Ricerca Globale
 
@@ -8,7 +7,7 @@
 ### Avvio e Configurazione
 
 Lo script è progettato per essere totalmente **autonomo**. 
-Alla prima esecuzione, verifica la presenza delle librerie necessarie e crea automaticamente un ambiente virtuale isolato (`Virtualenv*`) per installare le dipendenze, garantendo che il tuo ambiente di sistema rimanga pulito.
+Alla prima esecuzione, verifica la presenza delle librerie necessarie e crea automaticamente un ambiente virtuale isolato (`Virtualenv`) per installare le dipendenze, garantendo che il tuo ambiente di sistema rimanga pulito.
 
 Per avviare lo strumento, esegui il file principale dal tuo terminale:
 
