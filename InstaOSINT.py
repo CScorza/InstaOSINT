@@ -463,10 +463,11 @@ class CScorzaOSINTApp(ThemedTk):
         logo_img = None
         self.logo_small_header = None
         self.logo_header_image = None
+        self.logo_side_ref = None # Nuovo riferimento per il logo a lato
         
         self._last_result = None
         self.profile_image_tk = None 
-        self.output = None      
+        self.output = None     
         self.image_label = None 
         self.target_entry = None 
         self.global_image_frame = None 
@@ -476,7 +477,7 @@ class CScorzaOSINTApp(ThemedTk):
             try:
                 script_dir = Path(sys.argv[0]).resolve().parent
                 # Percorso logo richiesto
-                logo_path = script_dir / "logo.gif"
+                logo_path = script_dir / "Logo.gif"
 
                 if logo_path.exists():
                     logo_img = Image.open(logo_path)
@@ -485,12 +486,13 @@ class CScorzaOSINTApp(ThemedTk):
                     self.logo_icon_tk = ImageTk.PhotoImage(logo_icon)
                     self.iconphoto(True, self.logo_icon_tk) 
                     
-                    # Logo grande per la schermata di login
-                    logo_large = logo_img.copy().resize((80, 80), Image.LANCZOS)
+                    # LOGO GRANDE (120x120) per la schermata di login e come logo a lato
+                    # Modifica: Aumentato il resize da (80, 80) a (120, 120)
+                    logo_large = logo_img.copy().resize((140, 120), Image.LANCZOS) 
                     self.logo_header_image = ImageTk.PhotoImage(logo_large)
                     
                     # Logo piccolo per l'header principale
-                    logo_small = logo_img.copy().resize((24, 24), Image.LANCZOS)
+                    logo_small = logo_img.copy().resize((48, 24), Image.LANCZOS)
                     self.logo_small_header = ImageTk.PhotoImage(logo_small)
 
 
@@ -547,9 +549,9 @@ class CScorzaOSINTApp(ThemedTk):
         ttk.Button(ses_frame, text="📁 Load from file", command=self._load_session_from_file).grid(row=0, column=2, padx=10)
 
         ttk.Button(self.login_container, text="➡️ Load and Start Search", 
-                   command=self._on_login_continue, 
-                   cursor="hand2").pack(pady=15, ipadx=10, ipady=5)
-                   
+                    command=self._on_login_continue, 
+                    cursor="hand2").pack(pady=15, ipadx=10, ipady=5)
+                        
         
         # 3. MINI GUIDA E COPYRIGHT
         ttk.Separator(self.login_container, orient='horizontal').pack(fill='x', pady=15)
@@ -575,28 +577,37 @@ class CScorzaOSINTApp(ThemedTk):
         
         for i, (title, desc) in enumerate(guide_items):
             # Titolo in bold
-            ttk.Label(guide_content_frame, text=f"• {title}", font=("Arial", 9, "bold")).grid(row=i, column=0, sticky='nw')
+            ttk.Label(guide_content_frame, text=f"• {title}", font=("Arial", 12, "bold")).grid(row=i, column=0, sticky='nw')
             # Descrizione
-            ttk.Label(guide_content_frame, text=desc, font=("Arial", 9), wraplength=450).grid(row=i, column=1, sticky='nw', padx=(5, 0))
+            ttk.Label(guide_content_frame, text=desc, font=("Arial", 12), wraplength=450).grid(row=i, column=1, sticky='nw', padx=(5, 0))
             guide_content_frame.grid_columnconfigure(1, weight=1)
 
         
         # Come recuperare il SessionID
         ttk.Label(guide_frame, text="🔑 How to retrieve SessionID:", 
-                  font=("Arial", 10, "bold"), foreground=SECTION_COLOR).pack(anchor='w', pady=(10, 0))
+                  font=("Arial", 12, "bold"), foreground=SECTION_COLOR).pack(anchor='w', pady=(10, 0))
         
         ttk.Label(guide_frame, text="1. Log into Instagram on a web browser (or mobile browser developer tools).\n2. Open Developer Tools (F12) > Application/Storage > Cookies.\n3. Copy the value associated with the cookie named 'sessionid'.", 
-                  font=("Arial", 9)).pack(anchor='w', padx=5)
+                  font=("Arial", 12)).pack(anchor='w', padx=5)
 
 
-        # 4. COPYRIGHT E RIFERIMENTI
+        # 4. COPYRIGHT E RIFERIMENTI (Ristrutturato per includere l'immagine a lato)
         ttk.Separator(self.login_container, orient='horizontal').pack(fill='x', pady=15)
         
-        # Riferimenti
-        ref_frame = ttk.Frame(self.login_container)
-        ref_frame.pack(fill='x')
+        # Nuovo contenitore con griglia 2 colonne: Riferimenti (Col. 0) e Logo (Col. 1)
+        ref_and_logo_frame = ttk.Frame(self.login_container)
+        ref_and_logo_frame.pack(fill='x', expand=True)
         
-        ttk.Label(ref_frame, text="© CScorza 2024 | OSINT References", font=("Arial", 9, "bold")).pack(anchor='w', pady=(0, 5))
+        # Modifica: Aumentiamo il peso della colonna 0 (testo) e diminuiamo quello del logo
+        # per forzare il logo a stare più a sinistra possibile nel suo spazio.
+        ref_and_logo_frame.columnconfigure(0, weight=4) 
+        ref_and_logo_frame.columnconfigure(1, weight=1) 
+        
+        # Riferimenti (Colonna 0)
+        ref_frame = ttk.Frame(ref_and_logo_frame)
+        ref_frame.grid(row=0, column=0, sticky='nw') 
+        
+        ttk.Label(ref_frame, text="© CScorza - Indagini Telematiche 2025 | OSINT References", font=("Arial", 12, "bold")).pack(anchor='w', pady=(0, 5))
         
         ref_data = [
             ("✈️ Telegram Channel:", "https://t.me/CScorzaOSINT"),
@@ -613,9 +624,9 @@ class CScorzaOSINTApp(ThemedTk):
         ref_grid_frame.pack(fill='x', padx=5)
         
         for i, (key, value) in enumerate(ref_data):
-            ttk.Label(ref_grid_frame, text=key, font=("Arial", 8, "bold")).grid(row=i, column=0, sticky='w', padx=(5, 0))
+            ttk.Label(ref_grid_frame, text=key, font=("Arial", 12, "bold")).grid(row=i, column=0, sticky='w', padx=(5, 0))
             
-            link_label = ttk.Label(ref_grid_frame, text=value, font=("Arial", 8), foreground=SECTION_COLOR, cursor="hand2")
+            link_label = ttk.Label(ref_grid_frame, text=value, font=("Arial", 12), foreground=SECTION_COLOR, cursor="hand2")
             link_label.grid(row=i, column=1, sticky='w', padx=(5, 0))
             
             # Funzione lambda per aprire il link/email/wallet
@@ -632,6 +643,16 @@ class CScorzaOSINTApp(ThemedTk):
             link_label.bind("<Button-1>", lambda e, val=value: open_link_or_copy(val))
 
         ref_grid_frame.columnconfigure(1, weight=1)
+
+        # Logo a lato (Colonna 1)
+        if self.logo_header_image:
+            logo_label_side = ttk.Label(ref_and_logo_frame, image=self.logo_header_image, padding=10)
+            # Modifica: Usiamo 'nw' (Nord-Ovest) e rimuoviamo il padx per spingerlo a sinistra
+            logo_label_side.grid(row=0, column=1, sticky='nw', padx=(0, 0)) 
+            # Mantiene il riferimento per prevenire il garbage collection
+            self.logo_side_ref = self.logo_header_image 
+        else:
+            ttk.Label(ref_and_logo_frame, text="[Logo non caricato]", font=("Arial", 10)).grid(row=0, column=1, sticky='nw', padx=(0, 0))
 
 
     def _load_session_from_file(self):
@@ -1121,4 +1142,4 @@ def main():
     app.mainloop()
 
 if __name__ == "__main__":
-    main()
+    main()
