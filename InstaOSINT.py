@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # CScorza - OSINT Instagram (GUI + Email & Phone) - Full rewrite
-# Versione Finale con GUI Scuro, Anteprima Immagine, Download e Ricerca Numero/Globale (Layout V15 - Stable)
+# Versione Finale con GUI Scuro, Anteprima Immagine, Download e Ricerca Numero/Globale (Layout V16 - Resizable)
 
 import os
 import sys
@@ -194,7 +194,6 @@ def download_image_to_bytes(url: str) -> bytes or None:
     except Exception:
         return None
 
-# MODIFICATA: Per salvare solo l'immagine, la gestione dei formati è nella GUI
 def save_result_files_img_only(username, info_dict, output_path):
     """Salva l'immagine del profilo su file .jpg."""
     img_file = None
@@ -442,7 +441,7 @@ class InstagramOSINT:
             
         return self._fetch_profile_data(info, username=info.get("username"))
 
-# --- TK GUI CLASS (Layout Aggiornato) ---
+# --- TK GUI CLASS (Layout Aggiornato - MODIFICATO PER RISOLUZIONE NORMALE) ---
 
 class CScorzaOSINTApp(ThemedTk):
     def __init__(self):
@@ -455,7 +454,12 @@ class CScorzaOSINTApp(ThemedTk):
                                  activeBackground='#454545', activeForeground='white')
 
         self.title("CScorza - OSINT Instagram")
-        # Rimosso self.geometry("900x750") e self.resizable(True, True) qui.
+
+        # --- MODIFICA V16: IMPOSTAZIONE GEOMETRIA E RESIZE (NO FULLSCREEN) ---
+        self.geometry("1100x800")  # Imposta una dimensione di default comoda
+        self.resizable(True, True) # Abilita il ridimensionamento
+        self.minsize(900, 700)     # Imposta una dimensione minima per non rompere il layout
+        # -------------------------------------------------------------------
 
         self.osint = InstagramOSINT()
         
@@ -463,7 +467,7 @@ class CScorzaOSINTApp(ThemedTk):
         logo_img = None
         self.logo_small_header = None
         self.logo_header_image = None
-        self.logo_side_ref = None # Nuovo riferimento per il logo a lato
+        self.logo_side_ref = None 
         
         self._last_result = None
         self.profile_image_tk = None 
@@ -476,7 +480,6 @@ class CScorzaOSINTApp(ThemedTk):
         if Image and ImageTk:
             try:
                 script_dir = Path(sys.argv[0]).resolve().parent
-                # Percorso logo richiesto
                 logo_path = script_dir / "Logo.gif"
 
                 if logo_path.exists():
@@ -486,40 +489,25 @@ class CScorzaOSINTApp(ThemedTk):
                     self.logo_icon_tk = ImageTk.PhotoImage(logo_icon)
                     self.iconphoto(True, self.logo_icon_tk) 
                     
-                    # LOGO GRANDE (120x120) per la schermata di login e come logo a lato
-                    # Modifica: Aumentato il resize da (80, 80) a (120, 120)
                     logo_large = logo_img.copy().resize((140, 120), Image.LANCZOS) 
                     self.logo_header_image = ImageTk.PhotoImage(logo_large)
                     
-                    # Logo piccolo per l'header principale
                     logo_small = logo_img.copy().resize((48, 24), Image.LANCZOS)
                     self.logo_small_header = ImageTk.PhotoImage(logo_small)
 
-
             except Exception as e:
-                # La variabile logo_img non viene usata qui, ma stampiamo l'errore per debug.
                 print(f"Errore durante il caricamento del logo: {e}")
-
-        # IMPOSTA LA FINESTRA A SCHERMO INTERO SUBITO ALL'AVVIO
-        try:
-            self.attributes('-fullscreen', True)
-        except tk.TclError:
-            # Fallback per la massimizzazione se fullscreen completo non è supportato
-            self.state('zoomed') # Tenta la massimizzazione su sistemi che la supportano
 
         self._build_login_frame()
 
     def _build_login_frame(self):
-        # COLORE PER LE SEZIONI GUIDA
         SECTION_COLOR = '#6495ED'
         
-        # Rimuoviamo il relief dal login_container per un aspetto più pulito a schermo intero
-        self.login_container = ttk.Frame(self, padding="30 20 30 20") # Rimosso relief=tk.RIDGE
-        # Usiamo fill="both" e padx/pady a 0 per riempire l'intera finestra
+        self.login_container = ttk.Frame(self, padding="30 20 30 20")
         self.login_container.pack(expand=True, fill="both", padx=0, pady=0) 
         self.login_container.columnconfigure(0, weight=1)
 
-        # 1. HEADER (Logo grande e Titolo)
+        # 1. HEADER 
         if self.logo_header_image:
             logo_label = ttk.Label(self.login_container, image=self.logo_header_image)
             logo_label.pack(pady=(0, 5))
@@ -556,14 +544,12 @@ class CScorzaOSINTApp(ThemedTk):
         # 3. MINI GUIDA E COPYRIGHT
         ttk.Separator(self.login_container, orient='horizontal').pack(fill='x', pady=15)
         
-        # Mini Guida (RE-IMPLEMENTATA CON ttk.Label)
         guide_frame = ttk.Frame(self.login_container)
         guide_frame.pack(fill='x', pady=5)
         
         ttk.Label(guide_frame, text="🚀 Script Functionality Guide:", 
                   font=("Arial", 11, "bold"), foreground=SECTION_COLOR).pack(anchor='w', pady=(0, 5))
         
-        # Contenitore per le voci della guida (uso un frame interno per padding)
         guide_content_frame = ttk.Frame(guide_frame, padding=(10, 5))
         guide_content_frame.pack(fill='x')
         
@@ -576,9 +562,7 @@ class CScorzaOSINTApp(ThemedTk):
         ]
         
         for i, (title, desc) in enumerate(guide_items):
-            # Titolo in bold
             ttk.Label(guide_content_frame, text=f"• {title}", font=("Arial", 12, "bold")).grid(row=i, column=0, sticky='nw')
-            # Descrizione
             ttk.Label(guide_content_frame, text=desc, font=("Arial", 12), wraplength=450).grid(row=i, column=1, sticky='nw', padx=(5, 0))
             guide_content_frame.grid_columnconfigure(1, weight=1)
 
@@ -591,15 +575,12 @@ class CScorzaOSINTApp(ThemedTk):
                   font=("Arial", 12)).pack(anchor='w', padx=5)
 
 
-        # 4. COPYRIGHT E RIFERIMENTI (Ristrutturato per includere l'immagine a lato)
+        # 4. COPYRIGHT E RIFERIMENTI
         ttk.Separator(self.login_container, orient='horizontal').pack(fill='x', pady=15)
         
-        # Nuovo contenitore con griglia 2 colonne: Riferimenti (Col. 0) e Logo (Col. 1)
         ref_and_logo_frame = ttk.Frame(self.login_container)
         ref_and_logo_frame.pack(fill='x', expand=True)
         
-        # Modifica: Aumentiamo il peso della colonna 0 (testo) e diminuiamo quello del logo
-        # per forzare il logo a stare più a sinistra possibile nel suo spazio.
         ref_and_logo_frame.columnconfigure(0, weight=4) 
         ref_and_logo_frame.columnconfigure(1, weight=1) 
         
@@ -619,7 +600,6 @@ class CScorzaOSINTApp(ThemedTk):
             ("💎 TON:", "UQBtLB6m-7q8j9Y81FeccBEjccvl34Ag5tWaUD")
         ]
         
-        # Usa una griglia per allineare chiave e valore per i riferimenti
         ref_grid_frame = ttk.Frame(ref_frame)
         ref_grid_frame.pack(fill='x', padx=5)
         
@@ -629,7 +609,6 @@ class CScorzaOSINTApp(ThemedTk):
             link_label = ttk.Label(ref_grid_frame, text=value, font=("Arial", 12), foreground=SECTION_COLOR, cursor="hand2")
             link_label.grid(row=i, column=1, sticky='w', padx=(5, 0))
             
-            # Funzione lambda per aprire il link/email/wallet
             def open_link_or_copy(val):
                 if val.startswith("http"):
                     webbrowser.open_new(val)
@@ -647,9 +626,7 @@ class CScorzaOSINTApp(ThemedTk):
         # Logo a lato (Colonna 1)
         if self.logo_header_image:
             logo_label_side = ttk.Label(ref_and_logo_frame, image=self.logo_header_image, padding=10)
-            # Modifica: Usiamo 'nw' (Nord-Ovest) e rimuoviamo il padx per spingerlo a sinistra
             logo_label_side.grid(row=0, column=1, sticky='nw', padx=(0, 0)) 
-            # Mantiene il riferimento per prevenire il garbage collection
             self.logo_side_ref = self.logo_header_image 
         else:
             ttk.Label(ref_and_logo_frame, text="[Logo non caricato]", font=("Arial", 10)).grid(row=0, column=1, sticky='nw', padx=(0, 0))
@@ -680,13 +657,10 @@ class CScorzaOSINTApp(ThemedTk):
         
         self.login_container.destroy()
         
-        # AVVIA A SCHERMO INTERO (Già impostato in __init__)
-        # Riabilito la massimizzazione, anche se il fullscreen fallisce, per coerenza
-        try:
-            self.attributes('-fullscreen', True)
-        except tk.TclError:
-            self.state('zoomed') 
-
+        # --- MODIFICA V16: RIMOSSO BLOCCO FULLSCREEN ---
+        # Qui non viene più chiamato attributes('-fullscreen')
+        # La geometria è già stata impostata in __init__
+        
         self._build_search_frame()
 
     def _open_in_browser(self):
@@ -706,9 +680,8 @@ class CScorzaOSINTApp(ThemedTk):
             messagebox.showwarning("Error", "Enter a query (username, ID, or phone number) to search on Google CSE.")
             return
         
-        # URL specifico per la Ricerca Personalizzata di Google (Google CSE)
         base_url = "https://cse.google.com/cse"
-        cx = "d28c23ec014bd4cca" # Identificativo della tua Custom Search Engine
+        cx = "d28c23ec014bd4cca" 
         url = f"{base_url}?cx={cx}#gsc.tab=0&gsc.q={urllib.parse.quote_plus(query)}"
         webbrowser.open_new(url)
 
@@ -718,7 +691,6 @@ class CScorzaOSINTApp(ThemedTk):
         self.output.delete("1.0", tk.END)
         self._last_result = None
         
-        # Pulisce le immagini
         self.image_label.config(image='', text="No Results")
         self.profile_image_tk = None
         self._display_global_images({})
@@ -732,13 +704,11 @@ class CScorzaOSINTApp(ThemedTk):
 
 
     def _build_search_frame(self):
-        # COLORE UNIFORME PER LE ETICHETTE DELLE CATEGORIE
         CATEGORY_COLOR = '#6495ED' 
 
         main_frame = ttk.Frame(self, padding="10 10 10 0")
         main_frame.pack(fill="both", expand=True, padx=12, pady=(10, 0))
         
-        # Header e status (Tradotto)
         if hasattr(self, 'logo_small_header'):
             header_label = ttk.Label(main_frame, text="CScorza - OSINT Instagram", 
                                      font=("Arial", 18, "bold"), foreground=CATEGORY_COLOR,
@@ -755,40 +725,33 @@ class CScorzaOSINTApp(ThemedTk):
         input_wrapper.pack(fill="x", pady=(0, 10)) 
         input_wrapper.columnconfigure(1, weight=1)
         
-        # Etichetta con suggerimento per il prefisso (Tradotto)
         ttk.Label(input_wrapper, text="Target (Username / ID / Phone) (e.g. +39 for numbers):", font=("Arial", 11)).grid(row=0, column=0, sticky="w", padx=(0, 10))
         
-        # Barra di input
         self.target_entry = ttk.Entry(input_wrapper)
         self.target_entry.grid(row=0, column=1, sticky="ew", padx=(0, 10))
 
-        # --- CONTENITORE BOTTONI E RIORGANIZZAZIONE GRAFICA (V12) ---
+        # --- CONTENITORE BOTTONI ---
         button_container_outer = ttk.Frame(main_frame)
         button_container_outer.pack(fill="x", pady=(0, 10))
         
-        # Sotto-Frame per i Bottoni (layout principale)
         button_container = ttk.Frame(button_container_outer)
         button_container.pack(fill="x")
         
-        # Centratura implicita usando la griglia
-        button_container.columnconfigure(0, weight=1) # Colonna IG
-        button_container.columnconfigure(1, weight=1) # Colonna Global
+        button_container.columnconfigure(0, weight=1) 
+        button_container.columnconfigure(1, weight=1) 
 
         # 1. Gruppo Instagram (Colonna 0)
         ig_wrapper = ttk.Frame(button_container)
         ig_wrapper.grid(row=0, column=0, sticky="n", padx=(0, 10)) 
         
-        # A. Etichetta OSINT Instagram
         ttk.Label(ig_wrapper, text="OSINT Instagram", font=("Arial", 10, "bold"), foreground=CATEGORY_COLOR).pack(pady=(0, 3))
         
-        # B. Bottoni di Ricerca IG (User Info, ID Info)
         ig_search_frame = ttk.Frame(ig_wrapper)
         ig_search_frame.pack(pady=(0, 5))
         ttk.Label(ig_search_frame, text="Actions:", font=("Arial", 10, "bold")).pack(side="left", padx=(0, 5))
         ttk.Button(ig_search_frame, text="User Info", command=self._on_user_info, cursor="hand2").pack(side="left", padx=(5, 5))
         ttk.Button(ig_search_frame, text="ID Info", command=self._on_id_info, cursor="hand2").pack(side="left", padx=(5, 5))
         
-        # C. Bottone Explore Profile (Centrato sotto le azioni IG)
         explore_wrapper = ttk.Frame(ig_wrapper)
         explore_wrapper.pack(pady=(5, 0))
         ttk.Button(explore_wrapper, text="🌐 Explore Profile", command=self._open_in_browser, cursor="hand2").pack()
@@ -798,22 +761,19 @@ class CScorzaOSINTApp(ThemedTk):
         global_wrapper = ttk.Frame(button_container)
         global_wrapper.grid(row=0, column=1, sticky="n", padx=(10, 0))
         
-        # A. Etichetta Global Search (Centrata & Colore uniforme)
         ttk.Label(global_wrapper, text="Global Search:", font=("Arial", 10, "bold"), foreground=CATEGORY_COLOR).pack(pady=(0, 3))
         
-        # B. Bottoni Phone Search / Username Search (Centrati)
         global_search_frame = ttk.Frame(global_wrapper)
         global_search_frame.pack(pady=(0, 5)) 
         ttk.Button(global_search_frame, text="📞 Phone Search", command=self._on_phone_info, cursor="hand2").pack(side="left", padx=(5, 5))
         ttk.Button(global_search_frame, text="🌐 Username Search", command=self._on_global_search, cursor="hand2").pack(side="left", padx=(5, 5))
 
-        # C. Nuovo bottone Google CSE (Centrato sotto i due bottoni globali)
         google_wrapper = ttk.Frame(global_wrapper)
         google_wrapper.pack(pady=(5, 0))
         ttk.Button(google_wrapper, text="🔍 Search Google CSE", command=self._open_google_cse, cursor="hand2").pack()
 
 
-        # --- Frame per Anteprima e Output (Invariato) ---
+        # --- Frame per Anteprima e Output ---
         result_frame = ttk.Frame(main_frame)
         result_frame.pack(fill="both", expand=True, pady=(5, 12))
         result_frame.columnconfigure(1, weight=1)
@@ -823,21 +783,18 @@ class CScorzaOSINTApp(ThemedTk):
         image_panel = ttk.Frame(result_frame, width=200)
         image_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
         
-        # Sotto-Frame per l'immagine Instagram
         ig_image_wrapper = ttk.Frame(image_panel)
         ig_image_wrapper.pack(pady=(0, 5))
         ttk.Label(ig_image_wrapper, text="Instagram Profile (Click to open)", font=("Arial", 10, "bold")).pack()
         
-        # Frame contenitore fisso 180x180 per l'immagine IG
         ig_size_frame = ttk.Frame(ig_image_wrapper, width=180, height=180)
         ig_size_frame.pack()
-        ig_size_frame.pack_propagate(False) # Impedisce al contenuto di ridimensionarlo
+        ig_size_frame.pack_propagate(False) 
         
         self.image_label = ttk.Label(ig_size_frame, relief=tk.SOLID, borderwidth=1, text="No Results", anchor="center")
-        self.image_label.pack(fill="both", expand=True) # Riempie il frame contenitore
+        self.image_label.pack(fill="both", expand=True) 
         self.image_label.bind("<Button-1>", self._open_profile_pic)
 
-        # Nuovo Frame per le immagini/icone Globali (scorrimento verticale)
         self.global_image_frame = ttk.Frame(image_panel, width=200)
         self.global_image_frame.pack(fill="x", pady=(10, 0))
 
@@ -854,7 +811,6 @@ class CScorzaOSINTApp(ThemedTk):
         # Options (in fondo)
         ops_frame = ttk.Frame(main_frame, padding="0 0 0 5")
         ops_frame.pack(fill="x")
-        # Pulsante di pulizia ora chiama la funzione _clear_output
         ttk.Button(ops_frame, text="🗑️ Clear All", command=self._clear_output, cursor="hand2").pack(side="right") 
         ttk.Button(ops_frame, text="💾 Save to File", command=self._save_last_result, cursor="hand2").pack(side="right", padx=10)
 
@@ -869,7 +825,6 @@ class CScorzaOSINTApp(ThemedTk):
         found_widgets = []
         
         for site, info in results.items():
-            # Nota: Ricerca IG è già coperta dall'immagine principale, la saltiamo qui
             if info['status'] == "Found" and Image and ImageTk and site != "Instagram":
                 
                 icon_text = info['icon']
@@ -972,7 +927,6 @@ class CScorzaOSINTApp(ThemedTk):
             for start, end in zip(tag_ranges[0::2], tag_ranges[1::2]):
                 if self.output.compare(start, '<=', index) and self.output.compare(index, '<', end):
                     url = self.output.get(start, end).strip()
-                    # Estrarre solo l'URL se c'è un'etichetta prima (come nei risultati del telefono)
                     if url.startswith("Telegram Link: ") or url.startswith("WhatsApp Link: "):
                         url = url.split(": ", 1)[-1]
                         
@@ -1051,7 +1005,6 @@ class CScorzaOSINTApp(ThemedTk):
 
         username, info_dict = self._last_result
         
-        # Definisce i formati disponibili nel dialogo
         file_types = [
             ('JSON File', '*.json'),
             ('Text File', '*.txt'),
@@ -1059,7 +1012,6 @@ class CScorzaOSINTApp(ThemedTk):
             ('All Files', '*.*'),
         ]
         
-        # Apre la finestra di dialogo per il salvataggio
         save_path = filedialog.asksaveasfilename(
             defaultextension=".json",
             initialfile=f"{username}_osint",
@@ -1068,11 +1020,10 @@ class CScorzaOSINTApp(ThemedTk):
         )
 
         if not save_path:
-            return # Utente ha annullato
+            return 
 
         file_format = os.path.splitext(save_path)[1].lower()
         
-        # Dati da salvare (escludendo i dati binari dell'immagine)
         data_to_save = {k: v for k, v in info_dict.items() if k != "Profile Picture Data"}
         
         try:
@@ -1082,15 +1033,14 @@ class CScorzaOSINTApp(ThemedTk):
                 message = f"Results saved successfully in JSON to:\n{save_path}"
                 
             elif file_format == '.csv':
-                # Converti i dati in formato CSV (due colonne: Key, Value)
                 with open(save_path, 'w', newline='', encoding='utf-8') as f:
                     writer = csv.writer(f)
                     writer.writerow(["Key", "Value"])
                     for k, v in data_to_save.items():
-                        writer.writerow([k, str(v).replace('\n', ' ')]) # Rimuove newline per CSV pulito
+                        writer.writerow([k, str(v).replace('\n', ' ')]) 
                 message = f"Results saved successfully in CSV (Excel) to:\n{save_path}"
                 
-            elif file_format == '.txt' or file_format == '.doc': # Salvataggio in formato TXT/DOC leggibile
+            elif file_format == '.txt' or file_format == '.doc': 
                 with open(save_path, 'w', encoding='utf-8') as f:
                     for k, v in data_to_save.items():
                         f.write(f"{k}: {v}\n")
@@ -1099,7 +1049,6 @@ class CScorzaOSINTApp(ThemedTk):
             else:
                 raise ValueError("Unsupported file format selected.")
 
-            # Salvataggio dell'immagine (se presente)
             img_file = save_result_files_img_only(username, info_dict, save_path.rsplit('.', 1)[0])
             if img_file:
                 message += f"\nProfile image also saved to:\n{img_file}"
