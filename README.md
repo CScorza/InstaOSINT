@@ -2,88 +2,110 @@
 
 ## 🚀 OSINT Tool per l'Analisi di Profili Instagram e Ricerca Globale
 
-## 🇮🇹 ITALIANO: Dettagli del Progetto
+Framework avanzato di Open Source Intelligence (OSINT) sviluppato per investigatori digitali e appassionati di sicurezza informatica. 
+Il tool offre un'interfaccia web moderna per centralizzare la ricerca di informazioni su oltre 40 piattaforme social, numeri di telefono e profili Instagram.
 
-### Avvio e Configurazione
+*Advanced Open Source Intelligence (OSINT) framework developed for digital investigators and cybersecurity enthusiasts. The tool offers a modern web interface to centralize information gathering across over 40 social platforms, phone numbers, and Instagram profiles.*
 
-Lo script è progettato per essere totalmente **autonomo**. 
-Alla prima esecuzione, verifica la presenza delle librerie necessarie e crea automaticamente un ambiente virtuale isolato (`Virtualenv`) per installare le dipendenze, garantendo che il tuo ambiente di sistema rimanga pulito.
+<img width="1677" height="765" alt="image" src="https://github.com/user-attachments/assets/79fa5bdf-404a-4276-b218-114eb84e419c" />
 
-Per avviare lo strumento, esegui il file principale dal tuo terminale:
+### 🚀 Caratteristiche Principali | Key Features
 
-````
-python InstaOSINT.py
-````
+- Instagram Intelligence/: 
 
-Al primo avvio, lo script eseguirà i seguenti passaggi (visualizzati nel terminale):
+   - Estrazione di metadati, stato privacy, categoria account e recupero di email/telefoni offuscati tramite API private.
+   - *Metadata extraction, privacy status, and recovery of obfuscated emails/phones.*
 
-1.  **Verifica e Installazione Venv:** Creazione della cartella `VirtualenvInstaOSINT` e installazione delle librerie necessarie (`requests`, `Pillow`, `ttkthemes`, `phonenumbers`, etc.).
-2.  **Rilancio:** Lo script si auto-rilancerà all'interno di questo ambiente virtuale per garantire la corretta esecuzione della GUI.
+- Global Social Scanner:
+   - Ricerca simultanea di uno username su 45+ piattaforme (GitHub, TikTok, LinkedIn, X, etc.) con scraping dei metadati.
+   - *Simultaneous search across 45+ platforms with metadata scraping.*
 
-### Funzionalità Principali della GUI
+- Phone Lookup & Messaging OSINT:
 
-| Categoria | Funzionalità | Descrizione |
-| :--- | :--- | :--- |
-| **Instagram Actions** | **User Info / ID Info** | Ottiene informazioni dettagliate (follower, bio, URL dell'immagine, conteggio post) tramite l'username o l'ID numerico. |
-| | **Esplora Profilo** | Apre direttamente l'URL del profilo Instagram nel browser predefinito. |
-| **Global Search** | **Phone Search** | Analizza un numero di telefono internazionale (`+XX...`) fornendo validità, operatore, tipo di linea e link diretti per WhatsApp e Telegram. |
-| | **Username Search** | Esegue una verifica incrociata rapida per lo username fornito su oltre 15 piattaforme social (Facebook, Twitter/X, GitHub, TikTok, ecc.), mostrando i link trovati. |
-| | **Salvataggio Avanzato** | Permette di salvare i risultati ottenuti in locale nei formati **JSON, TXT, o CSV** (compatibile con Excel), con scelta del percorso tramite `filedialog`. |
+  -  WhatsApp:
+      - Verifica dello stato di attività del numero.
+      - *Verification and Telegram API integration (ID, name, profile pic).*
 
-### 🔑 Come Ricavare il SessionID di Instagram
+  - Telegram:
+    - Integrazione con le API ufficiali per identificare l'ID utente, il nome registrato e scaricare la foto profilo.
+    - *Integration with official APIs to identify user ID, registered name and download profile photo.*
 
-L'uso di un SessionID valido è **opzionale ma fortemente raccomandato** in quanto consente allo script di accedere a dati altrimenti nascosti o offuscati (come email/telefono parziali) che Instagram non rende disponibili agli utenti non autenticati o disconnessi.
+- Dorking Engine: 
+    - Integrazione di dork preimpostati per trovare leak di documenti (PDF, Excel) o profili social specifici.
+    - *Integration of pre-built dorks to find leaks of specific documents (PDF, Excel) or social profiles.*
 
-**Istruzioni per il SessionID:**
+- Reporting Professionale: 
+  - Generazione istantanea di report in formato PDF, Word o Excel 
+  - *Instantly generate reports in PDF, Word, or Excel formats*
 
-1.  Accedi a Instagram tramite un **browser web** (Chrome, Firefox, ecc.).
-2.  Apri gli **Strumenti per Sviluppatori** (solitamente premendo **F12**).
-3.  Vai alla scheda **Applicazione** (o Archiviazione/Storage) e seleziona **Cookie**.
-4.  Cerca la chiave denominata **`sessionid`** e copia il lungo valore alfanumerico associato.
-5.  Incolla questo valore nel campo SessionID dello script. Verrà salvato in locale nel file `sessionid.txt` per gli avvii futuri.
+### 🛠️ Setup
+Il tool include una funzione di Auto-Setup che gestisce autonomamente l'ambiente virtuale (venv) e le dipendenze.
+*The tool includes an Auto-Setup feature that automatically manages the virtual environment (venv) and dependencies.*
 
------
+<img width="978" height="768" alt="image" src="https://github.com/user-attachments/assets/986a7a7c-49b1-4164-97ee-e9b02878cb25" />
 
-## 🇬🇧 ENGLISH: Project Details
-
-### Getting Started and Setup*
-
-*The script is designed to be **fully self-contained**. On its first run, it checks for necessary libraries and automatically creates an isolated virtual environment (`Virtualenv*`) to install dependencies, ensuring your system environment remains clean.*
-
-*To start the tool, run the main file from your terminal:*
+Clone the repository:
 
 ```
-python InstaOSINT.py
+git clone https://github.com/tuo-username/cscorza-instaosint-pro.git
+cd cscorza-instaosint-pro
+```
+Run the script:
+```
+python3 InstaOSINT.py
+```
+### 📖 Guida alle Credenziali
+Per sbloccare il pieno potenziale del tool (funzioni Instagram e Telegram), è necessario configurare alcuni parametri.
+*To unlock the full potential of the tool (Instagram and Telegram features), you need to configure some parameters.*
+
+1. Come ottenere l'Instagram SessionID/How to get your Instagram Session ID
+
+```
+Il sessionid permette al tool di interrogare le API di Instagram simulando un accesso autenticato.
+The sessionid allows the tool to query Instagram APIs by simulating authenticated access.
+
+1. Accedi a Instagram.com dal tuo browser (Chrome/Edge/Firefox)/Go to Instagram.com from your browser (Chrome/Edge/Firefox).
+
+2. Premi F12 o tasto destro -> Ispeziona./Press F12 or right-click -> Inspect.
+
+3. Vai nella scheda Applicazione (o Storage su Firefox)./Go to the Application tab (or Storage in Firefox).
+
+4. Nel menu a sinistra, espandi Cookie e seleziona https://www.instagram.com./In the left menu, expand Cookies and select https://www.instagram.com.
+
+5. Cerca nella lista il nome sessionid e copia il valore nella colonna Value./Find the name sessionid in the list and copy the value into the Value column.
+```
+2. Come ottenere Telegram API ID e Hash/ How to get Telegram API ID
+```
+Questi parametri sono necessari per la scansione dei numeri di telefono tramite la libreria Telethon.
+These parameters are required for scanning phone numbers using the Telethon library.
+
+1. Accedi al portale my.telegram.org./Log in to my.telegram.org.
+
+2. Inserisci il tuo numero di telefono e il codice di conferma ricevuto su Telegram./Enter your phone number and the confirmation code you received on Telegram.
+
+3. Clicca su API development tools./Click on API development tools.
+
+4. Crea una nuova applicazione (puoi usare nomi casuali)./Create a new application (you can use random names).
+
+5. Copia l'App api_id e l'App api_hash./Copy the App api_id and the App api_hash.
+
 ```
 
-*On first run, the script will perform the following steps (visible in the terminal):*
-*1. **Venv Check & Installation:** Creation of the `VirtualenvInstaOSINT` folder and installation of required libraries (`requests`, `Pillow`, `ttkthemes`, `phonenumbers`, etc.).*
-\*2. **Relaunch:** *The script will automatically relaunch itself within this virtual environment to guarantee proper GUI execution.*
+###🐧 Linux (Ambiente Ottimizzato)
+Il tool è stato testato e ottimizzato per distribuzioni Linux.The tool has been tested and optimized for Linux distributions.
 
-### Key GUI Features
+**CScorza OSINT Specialist
 
-| *Category* | *Feature* | *Description* |
-| :--- | :--- | :--- |
-| *Instagram Actions* | *User Info / ID Info* | *Retrieves detailed information (followers, bio, image URL, post count) using the username or numeric ID.* |
-| | *Explore Profile* | *Directly opens the Instagram profile URL in your default browser.* |
-| *Global Search* | *Phone Search* | *Analyzes an international phone number (`+XX...`) providing validity, operator, line type, and direct links for WhatsApp and Telegram.* |
-| | *Username Search* | *Performs a quick cross-check for the provided username across over 15 major social media platforms (Facebook, Twitter/X, GitHub, TikTok, etc.), displaying found links.* |
-| | *Advanced Saving* | *Allows saving the results locally in **JSON, TXT, or CSV** (Excel compatible) formats, with path selection via `filedialog`.* |
+|GitHub:|CScorza|
+| :--- | :--- |
+|X / Twitter:| @CScorzaOSINT|
+|BlueSky:|cscorza.bsky.social|
+|Telegram:| @CScorzaOSINT|
+|Website:| cscorza.github.io|
+|Email:|cscorzaosint@protonmail.com|
 
-### 🔑 How to Retrieve Your Instagram SessionID*
+☕ Supporta il Progetto/Support
 
-*Using a valid SessionID is **optional but highly recommended** as it allows the script to access data otherwise hidden or obfuscated (like partial email/phone numbers) that Instagram does not make available to logged-out or unauthenticated users.*
-
-*1. Log into Instagram using a **web browser** (Chrome, Firefox, etc.).*
-*2. Open **Developer Tools** (usually by pressing **F12**).*
-*3. Navigate to the **Application** (or Storage) tab and select **Cookies**.*
-*4. Look for the key named **`sessionid`** and copy the associated long alphanumeric value.*
-*5. Paste this value into the SessionID field of the script. It will be saved locally in `sessionid.txt` for future launches.*
-
------
-
-## 🙏 Credits and Acknowledgements
-
-This project was built upon foundational work in the field of OSINT analysis.
-
-Special thanks to [**Megadose**](https://github.com/megadose) and their powerful tool [**Toutatis**](https://github.com/megadose/Toutatis), which served as inspiration and a foundational base for developing some core analysis logic within this project.
+|BTC:| bc1qfn9kynt7k26eaxk4tc67q2hjuzhfcmutzq2q6a|
+| :--- | :--- |
+|TON:| UQBtLB6m-7q8j9Y81FeccBEjccvl34Ag5tWaUD|
