@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-CScorza InstaOSINT Pro V2.0 - OS Intelligence Pro
+CScorza InstaOSINT Pro V3.0 - OS Intelligence Pro
 Developed by: CScorza OSINT Specialist
-Version: 2.0 (2025 Blue Web, Grid Layout & Clickable Links)
+Version: 3.0 (2025 Blue Web, Grid Layout & Clickable Links)
 """
 
 import os, sys, subprocess, threading, webbrowser, time, base64, json, hmac, hashlib, uuid, re, asyncio, io
@@ -45,10 +45,10 @@ session = requests.Session()
 
 # --- CONFIGURAZIONE ---
 CREDS_FILE = "credenziali API.json"
-IG_KEY = "e6358aeede676184b9fe702b30f4fd35e71744605e39d2181a34cede076b3c33"
+IG_KEY = "e6358aeede676184b9fe70b30f4fd35e71744605e39d181a34cede076b3c33"
 BASE_API = "https://i.instagram.com/api/v1"
 LOGO_URL = "https://github.com/CScorza.png"
-APP_ID_WEBPROFILE = "936619743392459"
+APP_ID_WEBPROFILE = "93661974339459"
 APP_ID_LOOKUP = "124024574287414"
 
 SOCIAL_MAP = {
