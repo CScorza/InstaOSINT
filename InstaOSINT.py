@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-CScorza InstaOSINT Pro V3.0 - OS Intelligence Pro
+CScorza InstaOSINT Pro V2.1 - Sovereign Intelligence Pro
 Developed by: CScorza OSINT Specialist
-Version: 3.0 (2025 Blue Web, Grid Layout & Clickable Links)
+Version: 2.1 (2025 Blue Web, Grid Layout & Clickable Links)
 """
 
 import os, sys, subprocess, threading, webbrowser, time, base64, json, hmac, hashlib, uuid, re, asyncio, io
@@ -19,7 +19,7 @@ def setup_env():
     
     if sys.prefix != str(venv_path):
         if not venv_path.exists():
-            print("[*] Inizializzazione Quantum Suite V2.0...")
+            print("[*] Inizializzazione Quantum Suite V2.1...")
             subprocess.run([sys.executable, "-m", "venv", str(venv_path)], check=True)
             print("[*] Sincronizzazione dipendenze professionali...")
             subprocess.run([str(pip), "install", "--upgrade", "pip"], check=True)
@@ -38,18 +38,28 @@ from telethon.tl.functions.contacts import ImportContactsRequest
 from telethon.tl.types import InputPhoneContact
 from fpdf import FPDF
 from docx import Document
-from docx.shared import Inches
+from docx.shared import Inches, Pt
 
 app = Flask(__name__)
 session = requests.Session()
 
 # --- CONFIGURAZIONE ---
 CREDS_FILE = "credenziali API.json"
-IG_KEY = "e6358aeede676184b9fe70b30f4fd35e71744605e39d181a34cede076b3c33"
+IG_KEY = "e6358aeede676184b9fe702b30f4fd35e71744605e39d2181a34cede076b3c33"
 BASE_API = "https://i.instagram.com/api/v1"
 LOGO_URL = "https://github.com/CScorza.png"
-APP_ID_WEBPROFILE = "93661974339459"
+APP_ID_WEBPROFILE = "936619743392459"
 APP_ID_LOOKUP = "124024574287414"
+
+CONTACTS_INFO = [
+    "GitHub: github.com/CScorza",
+    "X (Twitter): twitter.com/CScorzaOSINT",
+    "BlueSky: bsky.app/profile/cscorza.bsky.social",
+    "Telegram: t.me/CScorzaOSINT",
+    "LinkedIn: linkedin.com/in/cscorza",
+    "Web Site: cscorza.github.io/CScorza/",
+    "Email: cscorzaosint@protonmail.com"
+]
 
 SOCIAL_MAP = {
     "Instagram": {"base": "instagram.com/", "icon": "https://cdn-icons-png.flaticon.com/512/174/174855.png"},
@@ -131,7 +141,7 @@ HTML_UI = r"""
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>CScorza InstaOSINT Pro V2.0</title>
+    <title>CScorza InstaOSINT Pro V2.1</title>
     <style>
         :root { --bg: #0a0a0a; --panel: #141414; --accent: #6495ED; --gold: #FFD700; --text: #d0d0d0; --wa-green: #25D366; --tg-blue: #0088cc; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -144,6 +154,11 @@ HTML_UI = r"""
         .cred-item:hover { color: var(--accent); transform: translateY(-3px); }
         .cred-item img { width: 28px; height: 28px; object-fit: contain; }
         
+        .info-section { background: rgba(100, 149, 237, 0.05); border: 1px solid #333; border-radius: 12px; margin: 20px 0; padding: 15px; text-align: left; }
+        .info-section h3 { font-size: 14px; color: var(--accent); margin-top: 0; margin-bottom: 10px; text-transform: uppercase; }
+        .info-section p { font-size: 12px; margin: 5px 0; color: #aaa; }
+        .info-section code { background: #000; color: var(--gold); padding: 2px 5px; border-radius: 4px; font-size: 11px; }
+
         .crypto-box { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-top: 20px; }
         .crypto-card { background: #000; padding: 12px; border-radius: 8px; border-left: 3px solid var(--gold); }
         .crypto-card label { display: block; font-size: 10px; color: var(--gold); font-weight: bold; margin-bottom: 5px; }
@@ -168,7 +183,6 @@ HTML_UI = r"""
 
         .results-area { flex: 1; overflow-y: auto; padding: 0 20px 20px 20px; }
         
-        /* SCACCHIERA GRID SYSTEM */
         #results-container { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
@@ -184,7 +198,6 @@ HTML_UI = r"""
         .profile-img-container img.main-pfp { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; background: #222; }
         .social-mini-icon { position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 2px solid #000; }
         
-        /* ESPANSIONE DETTAGLI */
         .card-body { padding: 20px; display: none; grid-template-columns: 1fr; gap: 14px; font-size: 14px; border-top: 1px solid #222; background: #0d0d0d; }
         .res-card.open .card-body { display: grid; }
         
@@ -192,7 +205,6 @@ HTML_UI = r"""
         .data-box label { display: block; font-size: 11px; color: var(--accent); font-weight: bold; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1.2px; }
         .data-box span { color: #fff; line-height: 1.8; }
         
-        /* ELENCO DEI LINK */
         .data-box span a { 
             display: block; 
             color: var(--accent); 
@@ -228,7 +240,7 @@ HTML_UI = r"""
         <div class="setup-card">
             <img src="{{logo_url}}" style="width:110px; border-radius:50%; border:3px solid var(--accent); margin-bottom:15px;">
             <h1 style="color:var(--accent); margin:0; letter-spacing: 5px;">CScorza InstaOSINT Pro</h1>
-            <p style="opacity:0.5; margin-bottom: 30px;">Open Source Intelligence</p>
+            <p style="opacity:0.5; margin-bottom: 15px;">Open Source Intelligence</p>
             
             <div class="cred-box">
                 <a href="https://github.com/CScorza" target="_blank" class="cred-item"><img src="https://cdn-icons-png.flaticon.com/512/25/25231.png"> GitHub</a>
@@ -247,6 +259,12 @@ HTML_UI = r"""
                 </div>
                 <div><label style="font-size:10px; color:var(--accent)">TELEGRAM API ID</label><input type="text" id="tg-id" style="width:90%; background:#000; border:1px solid #333; color:#fff; padding:10px;" value="{{creds.tg_id}}"></div>
                 <div><label style="font-size:10px; color:var(--accent)">TELEGRAM API HASH</label><input type="password" id="tg-hash" style="width:90%; background:#000; border:1px solid #333; color:#fff; padding:10px;" value="{{creds.tg_hash}}"></div>
+            </div>
+
+            <div class="info-section">
+                <h3>Guida alla Configurazione</h3>
+                <p>1. <b>Instagram SessionID:</b> Apri Instagram su Browser Web, premi <code>F12</code>, vai su <b>Applicazione</b> > <b>Cookie</b> > seleziona <code>instagram.com</code> e copia il valore di <code>sessionid</code>.</p>
+                <p>2. <b>Telegram Token:</b> Vai su <a href="https://my.telegram.org" target="_blank" style="color:var(--accent)">my.telegram.org</a>, effettua il login, clicca su <b>API development tools</b> e ottieni <code>API ID</code> e <code>API HASH</code>.</p>
             </div>
 
             <div style="display:flex; gap:10px; margin-bottom: 30px;">
@@ -269,8 +287,9 @@ HTML_UI = r"""
             <div id="hist-list" style="flex:1; overflow-y:auto;"></div>
             <div style="border-top:1px solid #222; padding-top:15px;">
                 <select id="export-format" style="width:100%; margin-bottom:10px; background:#000; color:white; border:1px solid #333; padding:8px;">
-                    <option value="pdf">PDF Report Intelligence</option>
-                    <option value="excel">Excel Data Matrix</option>
+                    <option value="word">Word Report Intelligence (.docx)</option>
+                    <option value="pdf">PDF Report Intelligence (.pdf)</option>
+                    <option value="excel">Excel Data Matrix (.xlsx)</option>
                 </select>
                 <button class="btn" onclick="buildReport()" style="width:100%; background:#2e7d32; margin-bottom:5px;">📋 GENERA REPORT </button>
                 <button class="btn" onclick="location.reload()" style="width:100%; background:#800;">🗑️ RESET</button>
@@ -286,7 +305,13 @@ HTML_UI = r"""
                     <button class="btn" onclick="runSearch('phone')">📞 PHONE</button>
                     <button class="btn btn-global" onclick="runSearch('global')">🌐 SOCIAL SCANNER</button>
                     <div class="dork-bar">
-                        <select id="dork-engine" onchange="toggleDorkUI()" style="background:#000; color:white; border:1px solid #333; padding:10px;"><option value="google">Google</option><option value="duckduckgo">DuckDuckGo</option><option value="bing">Bing</option></select>
+                        <select id="dork-engine" onchange="toggleDorkUI()" style="background:#000; color:white; border:1px solid #333; padding:10px;">
+                            <option value="google">Google</option>
+                            <option value="duckduckgo">DuckDuckGo</option>
+                            <option value="bing">Bing</option>
+                            <option value="yahoo">Yahoo</option>
+                            <option value="yandex">Yandex</option>
+                        </select>
                         <select id="dork-country" disabled style="background:#000; color:white; border:1px solid #333; padding:10px;">
                             <optgroup label="Europa"><option value="it-it">Italia</option><option value="uk-en">Regno Unito</option><option value="de-de">Germania</option><option value="fr-fr">Francia</option><option value="es-es">Spagna</option><option value="ch-it">Svizzera</option></optgroup>
                             <optgroup label="Americhe"><option value="us-en">USA</option><option value="ca-en">Canada</option><option value="br-pt">Brasile</option><option value="mx-es">Messico</option></optgroup>
@@ -295,12 +320,19 @@ HTML_UI = r"""
                         <select id="dork-preset" style="background:#000; color:white; border:1px solid #333; padding:10px;">
                             <optgroup label="Social & People Recon">
                                 <option value='site:facebook.com OR site:instagram.com OR site:linkedin.com OR site:twitter.com OR site:tiktok.com "target"'>Tutti i Social</option>
-                                <option value='site:linkedin.com "target"'>LinkedIn</option>
+                                <option value='site:linkedin.com "target"'>LinkedIn Professional</option>
                                 <option value='site:t.me "target"'>Telegram Channels</option>
+                                <option value='site:about.me OR site:gravatar.com "target"'>Profili Bio/Personal</option>
                             </optgroup>
                             <optgroup label="Files & Data Leak">
-                                <option value='filetype:pdf "target"'>PDF Docs</option>
-                                <option value='filetype:xls OR filetype:xlsx "target"'>Excel DBs</option>
+                                <option value='filetype:pdf "target"'>Documenti PDF</option>
+                                <option value='filetype:xls OR filetype:xlsx "target"'>Database Excel</option>
+                                <option value='filetype:log OR filetype:env OR filetype:conf "target"'>Config & Log (Sensitive)</option>
+                                <option value='filetype:sql "target"'>SQL Database Dumps</option>
+                            </optgroup>
+                            <optgroup label="Archives & Pastes">
+                                <option value='site:pastebin.com OR site:ghostbin.com "target"'>Paste Sites</option>
+                                <option value='site:archive.org "target"'>Web Archives</option>
                             </optgroup>
                         </select>
                         <button class="btn" onclick="execDork()" style="background:#333">📡 LANCIATI DORK</button>
@@ -324,15 +356,8 @@ HTML_UI = r"""
         function linkify(text) {
             const urlRegex = /(https?:\/\/[^\s<,]+)/g;
             const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
-            
-            let linkedText = String(text).replace(urlRegex, (url) => {
-                return `<a href="${url}" target="_blank" onclick="event.stopPropagation()">${url}</a>`;
-            });
-            
-            linkedText = linkedText.replace(emailRegex, (email) => {
-                return `<a href="mailto:${email}" onclick="event.stopPropagation()">${email}</a>`;
-            });
-            
+            let linkedText = String(text).replace(urlRegex, (url) => `<a href="${url}" target="_blank" onclick="event.stopPropagation()">${url}</a>`);
+            linkedText = linkedText.replace(emailRegex, (email) => `<a href="mailto:${email}" onclick="event.stopPropagation()">${email}</a>`);
             return linkedText;
         }
 
@@ -370,11 +395,7 @@ HTML_UI = r"""
                 let completed = 0;
                 platforms.forEach(async (plat) => {
                     try {
-                        const r = await fetch('/api/search', { 
-                            method: 'POST', 
-                            headers: {'Content-Type':'application/json'}, 
-                            body: JSON.stringify({target, mode: 'single', platform: plat}) 
-                        });
+                        const r = await fetch('/api/search', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({target, mode: 'single', platform: plat}) });
                         const d = await r.json();
                         if(d && !d.Error) renderCard(d);
                     } catch(e) {}
@@ -393,12 +414,9 @@ HTML_UI = r"""
         function renderCard(d) {
             const container = document.getElementById('results-container'); 
             let items = '';
-            for(let k in d.info) {
-                const val = linkify(d.info[k]);
-                items += `<div class="data-box ${k.includes('Obf')?'gold':''}"><label>${k}</label><span>${val}</span></div>`;
-            }
+            for(let k in d.info) items += `<div class="data-box ${k.includes('Obf')?'gold':''}"><label>${k}</label><span>${linkify(d.info[k])}</span></div>`;
 
-            const platIcon = socialIcons[d.type] ? socialIcons[d.type].icon : socialIcons["Instagram"].icon;
+            let platIcon = socialIcons[d.type] ? socialIcons[d.type].icon : (d.type !== "Phone" ? socialIcons["Instagram"].icon : "");
             let statusIconsHtml = '';
             if(d.type === "Phone" || d.info["WhatsApp"]) {
                 const isWa = d.info["WhatsApp"] === "Attivo"; 
@@ -422,8 +440,8 @@ HTML_UI = r"""
             card.innerHTML = `
                 <div class="card-top">
                     <div class="profile-img-container">
-                        <img class="main-pfp" src="${d.main_img}" onerror="this.src='${platIcon}'">
-                        <img src="${platIcon}" class="social-mini-icon">
+                        <img class="main-pfp" src="${d.main_img}" onerror="this.src='${platIcon || 'https://cdn-icons-png.flaticon.com/512/724/724664.png'}'">
+                        ${platIcon ? `<img src="${platIcon}" class="social-mini-icon">` : ''}
                     </div>
                     <div>
                         <h3 style="margin:0; color:var(--accent); font-size: 18px;">@${d.username}</h3>
@@ -447,14 +465,29 @@ HTML_UI = r"""
 
         function downloadProfilePic() { if(!currentData) return; const a = document.createElement('a'); a.href = currentData.main_img; a.download = `OSINT_${currentData.username}.jpg`; a.click(); }
         function openProfile() { if(currentData.url) window.open(currentData.url, '_blank'); }
-        function execDork() { const t = document.getElementById('main-search').value; const e = document.getElementById('dork-engine').value; const c = document.getElementById('dork-country').value; const p = document.getElementById('dork-preset').value; let url = e === 'duckduckgo' ? `https://duckduckgo.com/?q=${encodeURIComponent(p.replace('target', t))}&kl=${c}` : `https://www.google.it/search?q=${encodeURIComponent(p.replace('target', t))}`; window.open(url, '_blank'); }
+        
+        function execDork() { 
+            const t = document.getElementById('main-search').value; 
+            const e = document.getElementById('dork-engine').value; 
+            const c = document.getElementById('dork-country').value; 
+            const p = document.getElementById('dork-preset').value; 
+            let query = p.replace('target', t);
+            let url = "";
+            if(e === 'google') url = `https://www.google.it/search?q=${encodeURIComponent(query)}`;
+            else if(e === 'duckduckgo') url = `https://duckduckgo.com/?q=${encodeURIComponent(query)}&kl=${c}`;
+            else if(e === 'bing') url = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
+            else if(e === 'yahoo') url = `https://search.yahoo.com/search?p=${encodeURIComponent(query)}`;
+            else if(e === 'yandex') url = `https://yandex.com/search/?text=${encodeURIComponent(query)}`;
+            window.open(url, '_blank'); 
+        }
         
         async function buildReport() {
             const selectedIds = Array.from(document.querySelectorAll('.h-check:checked')).map(cb => cb.value);
             if(selectedIds.length === 0) return alert("Seleziona target.");
             const format = document.getElementById('export-format').value; const targets = selectedIds.map(id => historyDb[id]);
             const r = await fetch('/api/export', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({targets, format}) });
-            const blob = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Report.${format === 'excel' ? 'xlsx' : 'pdf'}`; a.click();
+            const blob = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); 
+            a.download = `Report Intelligence.${format === 'excel' ? 'xlsx' : (format === 'word' ? 'docx' : 'pdf')}`; a.click();
         }
     </script>
 </body>
@@ -482,70 +515,16 @@ def scrape_metadata(url, platform_name=""):
     try:
         r = session.get(url, timeout=7, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OSINT-Bot/2.1"})
         html = r.text
-        
         img = re.search(r'property="(?:og:image|twitter:image)"\s+content="([^"]+)"', html)
         desc = re.search(r'property="(?:og:description|twitter:description)"\s+content="([^"]+)"', html)
         title = re.search(r'<title>(.*?)</title>', html)
-        
         pfp = get_b64_image(img.group(1)) if img else ""
-        meta_dict = {}
-
-        meta_dict["Bio/Descrizione"] = (desc.group(1) if desc else "Nessuna descrizione rilevata.")
+        meta_dict = {"Bio/Descrizione": (desc.group(1) if desc else "N/D")}
         if title: meta_dict["Titolo Pagina"] = title.group(1).strip()
-
-        if platform_name == "GitHub":
-            foll = re.search(r'([0-9,k.]+)</span>\s+followers', html)
-            foll_ing = re.search(r'([0-9,k.]+)</span>\s+following', html)
-            loc = re.search(r'itemprop="homeLocation"[^>]*>.*?<span[^>]*>(.*?)</span>', html, re.S)
-            blog = re.search(r'itemprop="url"[^>]*>(.*?)</a>', html)
-            if foll: meta_dict["Followers"] = foll.group(1)
-            if foll_ing: meta_dict["Following"] = foll_ing.group(1)
-            if loc: meta_dict["Località"] = loc.group(1).strip()
-            if blog: meta_dict["Sito Web"] = blog.group(1).strip()
-            
-        elif platform_name == "YouTube":
-            subs = re.search(r'"subscriberCountText":"(.*?)"', html)
-            if subs: meta_dict["Iscritti"] = subs.group(1)
-
-        elif platform_name == "TikTok":
-            f_count = re.search(r'"followerCount":([0-9]+)', html)
-            l_count = re.search(r'"heart":([0-9]+)', html)
-            if f_count: meta_dict["Followers"] = f_count.group(1)
-            if l_count: meta_dict["Likes"] = l_count.group(1)
-
-        elif platform_name == "Reddit":
-            karma = re.search(r'"commentKarma":(\d+),"linkKarma":(\d+)', html)
-            if karma: meta_dict["Karma"] = f"Post: {karma.group(2)} | Comm: {karma.group(1)}"
-
         emails_found = list(set(re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', html[:25000])))
         if emails_found: meta_dict["Email Rilevate"] = " ".join(emails_found[:5])
-
-        all_raw_links = re.findall(r'href=["\'](https?://[^"\']+)["\']', html)
-        blacklist = ['githubassets.com', 'google.com', 'gstatic.com', 'facebook.com/tr', 'schema.org', 'w3.org', 'api.instagram.com', 'apple.com', 'microsoft.com', 'doubleclick.net', 'googletagmanager.com', 'google-analytics.com', 'github.com/login', 'github.com/join']
-        known_socials = ["instagram.com", "facebook.com", "twitter.com", "x.com", "linkedin.com", "t.me", "wa.me", "discord", "twitch", "linktr.ee", "threads.net", "bsky.app"]
-        
-        social_links = []
-        external_links = []
-        processed = set()
-
-        for link in all_raw_links:
-            clean_link = link.rstrip('/').split('?')[0]
-            if clean_link in processed or any(b in clean_link.lower() for b in blacklist) or clean_link.lower() == url.lower().rstrip('/'):
-                continue
-            
-            is_social = any(s in clean_link.lower() for s in known_socials)
-            if is_social:
-                social_links.append(clean_link)
-            else:
-                if not any(ext in clean_link.lower() for ext in ['.css', '.js', '.png', '.jpg', '.svg', '.json']):
-                    external_links.append(clean_link)
-            processed.add(clean_link)
-
-        if social_links: meta_dict["Social Collegati"] = " ".join(list(set(social_links))[:10])
-        if external_links: meta_dict["Siti Esterni"] = " ".join(list(set(external_links))[:5])
-
         return pfp, meta_dict
-    except: return "", {"Stato": "Profilo attivo (Errore analisi dettagli)"}
+    except: return "", {"Stato": "Profilo attivo (Errore analisi)"}
 
 @app.route('/api/search', methods=['POST'])
 def search_logic():
@@ -553,62 +532,74 @@ def search_logic():
     try:
         cookies = {"sessionid": core.creds['sid']} if core.creds['sid'] else {}
         headers_ig = {"X-IG-App-ID": APP_ID_WEBPROFILE, "User-Agent": "Instagram 292.0.0.17.111 Android"}
-        
         if mode == 'ig' or (mode == 'single' and data.get('platform') == 'Instagram'):
             r = session.get(f"https://i.instagram.com/api/v1/users/web_profile_info/?username={target}", headers=headers_ig, cookies=cookies, timeout=10)
             u = r.json().get('data', {}).get('user')
             if not u: return jsonify({"Error": "Not found"})
             lookup = core.instagram_lookup(target)
-            info = {
-                "Nome": u.get('full_name'), "ID": u.get('id'), "Followers": u.get('edge_followed_by', {}).get('count'),
-                "Privacy": "🔒 Privato" if u.get('is_private') else "🔓 Pubblico", "Tipo Account": "💼 Professionale" if u.get('is_professional_account') else "👤 Personale",
-                "Categoria": u.get('category_name') or "N/D", "Verificato": "✔️ Sì" if u.get('is_verified') else "❌ No",
-                "Account Recente": "⚠️ Sì" if u.get('is_joined_recently') else "📅 No", "Link Bio": u.get('external_url') or "Nessuno",
-                "Email Obf": lookup.get('Email Obf', 'N/A'), "Phone Obf": lookup.get('Phone Obf', 'N/A')
-            }
+            info = {"Nome": u.get('full_name'), "ID": u.get('id'), "Followers": u.get('edge_followed_by', {}).get('count'), "Privacy": "🔒 Privato" if u.get('is_private') else "🔓 Pubblico", "Link Bio": u.get('external_url') or "Nessuno", "Email Obf": lookup.get('Email Obf', 'N/A'), "Phone Obf": lookup.get('Phone Obf', 'N/A')}
             return jsonify({"username": u['username'], "type": "Instagram", "url": f"https://instagram.com/{target}", "main_img": get_b64_image(u.get('profile_pic_url_hd')), "info": info})
-        
         elif mode == 'single':
-            name = data.get('platform'); config = SOCIAL_MAP.get(name)
+            config = SOCIAL_MAP.get(data.get('platform'))
             url = f"https://www.{config['base']}{target}"
             resp = session.get(url, timeout=5)
             if resp.status_code == 200:
-                img, meta_data = scrape_metadata(url, name)
-                return jsonify({"username": target, "type": name, "url": url, "main_img": img if img else config["icon"], "info": meta_data})
+                img, meta_data = scrape_metadata(url, data.get('platform'))
+                return jsonify({"username": target, "type": data.get('platform'), "url": url, "main_img": img if img else config["icon"], "info": meta_data})
             return jsonify({"Error": "Not found"})
-
         elif mode == 'phone':
             clean = target if target.startswith('+') else '+' + target
             p = phonenumbers.parse(clean); c_name = geocoder.description_for_number(p, "it")
             res = {"username": target, "type": "Phone", "url": f"https://wa.me/{target.replace('+','')}", "main_img": "https://cdn-icons-png.flaticon.com/512/724/724664.png", "info": {"Nazione": c_name, "Operatore": carrier.name_for_number(p, "it"), "WhatsApp": "Attivo"}}
-            if core.creds['tg_id']:
-                async def tg_scan():
-                    client = TelegramClient('session', core.creds['tg_id'], core.creds['tg_hash'])
-                    await client.connect()
-                    if await client.is_user_authorized():
-                        r = await client(ImportContactsRequest([InputPhoneContact(client_id=0, phone=clean, first_name="Target", last_name="")]))
-                        if r.users:
-                            u = r.users[0]; res['info']['Telegram'] = f"Registrato: {u.first_name}"; res['type'] = "Telegram"
-                            if u.photo: res['main_img'] = get_b64_image(await client.download_profile_photo(u, bytes))
-                    await client.disconnect()
-                loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop); loop.run_until_complete(tg_scan())
             return jsonify(res)
-            
     except Exception as e: return jsonify({"Error": str(e)})
 
 @app.route('/api/export', methods=['POST'])
 def export_report():
     data = request.json; targets = data.get('targets'); fmt = data.get('format')
-    if fmt == 'pdf':
-        pdf = FPDF(); pdf.set_auto_page_break(auto=True, margin=15)
+    logo_data = session.get(LOGO_URL).content
+
+    if fmt == 'word':
+        doc = Document(); 
+        with NamedTemporaryFile(delete=False, suffix=".png") as tmp: tmp.write(logo_data); tmp_path = tmp.name
+        doc.add_picture(tmp_path, width=Inches(1.0))
+        doc.add_heading('CScorza Report Intelligence', 0)
+        p_contacts = doc.add_paragraph()
+        for c in CONTACTS_INFO: p_contacts.add_run(c + "\n").font.size = Pt(9)
+        doc.add_page_break()
         for t in targets:
-            pdf.add_page(); pdf.set_font("Arial", 'B', 16); pdf.cell(0, 10, f"Report: @{t['username']}", 0, 1)
+            doc.add_heading(f"Target: @{t['username']} ({t['type']})", level=1)
+            for k, v in t['info'].items(): doc.add_paragraph(f"{k}: {v}")
+            doc.add_paragraph("---")
+        buf = io.BytesIO(); doc.save(buf); buf.seek(0)
+        return send_file(buf, download_name="Report.docx", as_attachment=True)
+
+    elif fmt == 'pdf':
+        pdf = FPDF(); pdf.set_auto_page_break(auto=True, margin=15)
+        with NamedTemporaryFile(delete=False, suffix=".png") as tmp: tmp.write(logo_data); tmp_path = tmp.name
+        pdf.add_page()
+        pdf.image(tmp_path, 10, 8, 25)
+        pdf.set_font("Arial", 'B', 20); pdf.cell(0, 20, "CScorza Report Intelligence", 0, 1, 'C')
+        pdf.set_font("Arial", '', 8)
+        for c in CONTACTS_INFO: pdf.cell(0, 4, c, 0, 1, 'C')
+        pdf.ln(10)
+        for t in targets:
+            pdf.set_font("Arial", 'B', 14); pdf.cell(0, 10, f"Target: @{t['username']}", 0, 1)
             pdf.set_font("Arial", '', 10)
-            for k, v in t['info'].items(): pdf.cell(0, 6, f"{k}: {v}", 0, 1)
+            for k, v in t['info'].items(): pdf.multi_cell(0, 6, f"{k}: {v}")
+            pdf.ln(5)
         return send_file(io.BytesIO(pdf.output()), download_name="Report.pdf", as_attachment=True)
+
     elif fmt == 'excel':
-        df = pd.DataFrame([ {**{"Username": t['username'], "Tipo": t['type']}, **t['info']} for t in targets ])
-        buf = io.BytesIO(); df.to_excel(buf, index=False); buf.seek(0)
+        # Per Excel aggiungiamo l'intestazione nelle prime righe
+        header_rows = [["CScorza Report Intelligence"], *[[c] for c in CONTACTS_INFO], [""]]
+        df_data = [ {**{"Username": t['username'], "Tipo": t['type']}, **t['info']} for t in targets ]
+        df = pd.DataFrame(df_data)
+        buf = io.BytesIO()
+        with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+            pd.DataFrame(header_rows).to_excel(writer, index=False, header=False, sheet_name='Intelligence')
+            df.to_excel(writer, index=False, startrow=len(header_rows), sheet_name='Intelligence')
+        buf.seek(0)
         return send_file(buf, download_name="Data.xlsx", as_attachment=True)
 
 if __name__ == "__main__":
