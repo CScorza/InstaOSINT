@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-CScorza InstaOSINT Pro V2.1 - Sovereign Intelligence Pro
+CScorza InstaOSINT Pro V2.3 - Sovereign Intelligence Pro
 Developed by: CScorza OSINT Specialist
-Version: 2.1 (2025 Blue Web, Grid Layout & Clickable Links)
+Version: 2.3 (2025 Blue Web, Grid Layout, Filtering & Deep Scraper)
 """
 
 import os, sys, subprocess, threading, webbrowser, time, base64, json, hmac, hashlib, uuid, re, asyncio, io
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from urllib.parse import urlparse
 
 # --- AUTO-SETUP ---
 def setup_env():
@@ -19,7 +20,7 @@ def setup_env():
     
     if sys.prefix != str(venv_path):
         if not venv_path.exists():
-            print("[*] Inizializzazione Quantum Suite V2.1...")
+            print("[*] Inizializzazione Quantum Suite V2.2...")
             subprocess.run([sys.executable, "-m", "venv", str(venv_path)], check=True)
             print("[*] Sincronizzazione dipendenze professionali...")
             subprocess.run([str(pip), "install", "--upgrade", "pip"], check=True)
@@ -141,96 +142,128 @@ HTML_UI = r"""
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>CScorza InstaOSINT Pro V2.1</title>
+    <title>CScorza InstaOSINT Pro V2.2</title>
     <style>
-        :root { --bg: #0a0a0a; --panel: #141414; --accent: #6495ED; --gold: #FFD700; --text: #d0d0d0; --wa-green: #25D366; --tg-blue: #0088cc; }
+        :root { --bg: #0d0d0d; --panel: #141414; --accent: #6495ED; --gold: #FFD700; --text: #e0e0e0; --success: #2e7d32; --warning: #fdd835; --danger: #c62828; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
+        /* Login Styles */
         #login-view { position: fixed; inset: 0; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 2000; overflow-y: auto; padding: 40px 0; }
         .setup-card { background: var(--panel); padding: 35px; border-radius: 20px; border: 1px solid #222; width: 900px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        
         .cred-box { display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin: 25px 0; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px; }
         .cred-item { text-decoration: none; color: var(--text); font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: 0.3s; width: 85px; }
         .cred-item:hover { color: var(--accent); transform: translateY(-3px); }
         .cred-item img { width: 28px; height: 28px; object-fit: contain; }
-        
         .info-section { background: rgba(100, 149, 237, 0.05); border: 1px solid #333; border-radius: 12px; margin: 20px 0; padding: 15px; text-align: left; }
         .info-section h3 { font-size: 14px; color: var(--accent); margin-top: 0; margin-bottom: 10px; text-transform: uppercase; }
         .info-section p { font-size: 12px; margin: 5px 0; color: #aaa; }
         .info-section code { background: #000; color: var(--gold); padding: 2px 5px; border-radius: 4px; font-size: 11px; }
-
+        
+        /* WALLET STYLES */
         .crypto-box { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; margin-top: 20px; }
         .crypto-card { background: #000; padding: 12px; border-radius: 8px; border-left: 3px solid var(--gold); }
         .crypto-card label { display: block; font-size: 10px; color: var(--gold); font-weight: bold; margin-bottom: 5px; }
         .crypto-card code { font-size: 10px; color: #aaa; word-break: break-all; font-family: monospace; }
 
+        /* Dashboard Layout */
         #dashboard { display: none; flex: 1; width: 100%; height: 100%; }
         #sidebar { width: 340px; background: #050505; border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
-        #main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0a0a0a; }
-        .header-brand { padding: 15px 25px; background: #000; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 15px; }
-        .header-brand img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent); }
-        .header-brand h2 { color: var(--accent); margin: 0; letter-spacing: 2px; font-size: 24px; text-transform: uppercase; font-weight: 800; }
+        #main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #0a0a0a; position: relative; }
+
+        /* Header & Brand */
+        .header-brand { padding: 15px 25px; background: #000; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 15px; height: 60px; }
+        .header-brand img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent); }
+        .header-brand h2 { color: var(--accent); margin: 0; letter-spacing: 2px; font-size: 20px; text-transform: uppercase; font-weight: 800; }
         
-        .unified-header { padding: 20px; background: #0a0a0a; }
-        .unified-bar { display: grid; grid-template-columns: 2.2fr 0.9fr 0.9fr 1fr; gap: 12px; align-items: center; width: 100%; }
-        .unified-input { background: #000; border: 1px solid #333; color: #fff; padding: 14px; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
-        .unified-input:focus { border-color: var(--accent); box-shadow: 0 0 10px rgba(100,149,237,0.2); }
+        /* TABS SYSTEM */
+        .tabs-nav { display: flex; background: #111; border-bottom: 1px solid #222; }
+        .tab-btn { flex: 1; padding: 20px; background: transparent; border: none; color: #777; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; border-bottom: 2px solid transparent; font-size: 14px; }
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.02); }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); background: rgba(100, 149, 237, 0.05); }
+        .tab-btn span { margin-right: 8px; font-size: 16px; }
+
+        .tab-content { display: none; padding: 25px; background: #0a0a0a; animation: fadeIn 0.4s ease; border-bottom: 1px solid #222; }
+        .tab-content.active { display: block; }
         
-        .dork-bar { grid-column: span 4; display: grid; grid-template-columns: 1fr 1fr 2fr 1.5fr; gap: 10px; margin-top: 10px; padding-top: 10px; }
-        #progress-container { width: 100%; height: 4px; background: #222; display: none; overflow: hidden; }
+        /* SUB TABS (Chips) */
+        .sub-nav { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .sub-tab-btn { background: #1a1a1a; border: 1px solid #333; color: #aaa; padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s; white-space: nowrap; }
+        .sub-tab-btn:hover { border-color: #666; color: #fff; }
+        .sub-tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px rgba(100,149,237,0.3); }
+
+        .input-group { display: flex; gap: 10px; width: 100%; }
+        .main-input { flex: 1; background: #000; border: 1px solid #333; color: #fff; padding: 15px; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
+        .main-input:focus { border-color: var(--accent); box-shadow: 0 0 15px rgba(100,149,237,0.15); }
+        
+        /* Specific Tab Controls */
+        .dork-controls { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 15px; }
+        .dork-select { background: #111; color: #fff; border: 1px solid #333; padding: 12px; border-radius: 6px; outline: none; cursor: pointer; height: 45px; }
+        .dork-select:hover { border-color: #555; }
+        .dork-select option { background: #000; color: #ccc; padding: 10px; }
+
+        /* STATUS LEGEND */
+        .status-legend { display: flex; gap: 15px; margin-top: 15px; justify-content: center; background: #080808; padding: 10px; border-radius: 8px; border: 1px solid #222; user-select: none; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #aaa; cursor: pointer; padding: 5px 10px; border-radius: 20px; border: 1px solid transparent; transition: 0.3s; }
+        .legend-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .legend-item.active { border-color: var(--accent); background: rgba(100,149,237,0.1); }
+        
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot.green { background: var(--success); box-shadow: 0 0 5px var(--success); }
+        .dot.yellow { background: var(--warning); box-shadow: 0 0 5px var(--warning); }
+        .dot.red { background: var(--danger); opacity: 0.7; }
+        .dot.blue { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+
+        /* Buttons */
+        .btn { background: var(--accent); color: white; border: none; padding: 0 30px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .btn-ig { background: linear-gradient(135deg, #f09433, #bc1888); }
+        .btn-phone { background: linear-gradient(135deg, #25D366, #128C7E); }
+        .btn-social { background: linear-gradient(135deg, #2c3e50, #4ca1af); }
+        .btn-dork { background: linear-gradient(135deg, #333, #555); }
+        
+        /* NEW BUTTON STYLE FOR CARD */
+        .btn-view { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 8px 15px; border-radius: 6px; font-size: 12px; text-decoration: none; font-weight: bold; transition: 0.3s; white-space: nowrap; display: inline-block; }
+        .btn-view:hover { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(100,149,237,0.3); }
+
+        /* Progress Bar */
+        #progress-container { width: 100%; height: 3px; background: #111; display: none; overflow: hidden; position: absolute; top: 0; left: 0; z-index: 100; }
         #progress-bar { width: 30%; height: 100%; background: var(--accent); animation: loading 1.2s infinite ease-in-out; }
         @keyframes loading { from { transform: translateX(-100%); } to { transform: translateX(400%); } }
 
-        .results-area { flex: 1; overflow-y: auto; padding: 0 20px 20px 20px; }
-        
-        #results-container { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
-            gap: 25px; 
-            width: 100%; 
-        }
-        
-        .res-card { background: #111; border: 1px solid #222; border-radius: 12px; position: relative; transition: 0.3s; animation: slideUp 0.3s ease; height: fit-content; overflow: hidden; }
-        .card-top { padding: 18px; display: flex; align-items: center; gap: 18px; cursor: pointer; background: #181818; }
-        .card-top:hover { background: #222; }
-        
-        .profile-img-container { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+        /* Results Area */
+        .results-area { flex: 1; overflow-y: auto; padding: 25px; background: #0a0a0a; }
+        #results-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; width: 100%; }
+
+        /* Card Styles */
+        .res-card { background: #111; border: 1px solid #222; border-radius: 12px; position: relative; transition: 0.3s; animation: slideUp 0.3s ease; height: fit-content; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .res-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .card-top { padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 18px; background: #161616; }
+        .profile-img-container { position: relative; width: 80px; height: 80px; flex-shrink: 0; cursor: pointer; }
         .profile-img-container img.main-pfp { width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; background: #222; }
-        .social-mini-icon { position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 2px solid #000; }
         
-        .card-body { padding: 20px; display: none; grid-template-columns: 1fr; gap: 14px; font-size: 14px; border-top: 1px solid #222; background: #0d0d0d; }
+        /* STATUS INDICATORS */
+        .profile-img-container img.main-pfp.status-green { border-color: var(--success) !important; box-shadow: 0 0 10px var(--success); }
+        .profile-img-container img.main-pfp.status-yellow { border-color: var(--warning) !important; box-shadow: 0 0 10px var(--warning); }
+        .profile-img-container img.main-pfp.status-red { border-color: var(--danger) !important; opacity: 0.5; }
+
+        .social-mini-icon { position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 2px solid #000; padding: 2px; }
+        
+        .card-body { padding: 20px; display: none; grid-template-columns: 1fr; gap: 14px; font-size: 14px; border-top: 1px solid #222; background: #0e0e0e; }
         .res-card.open .card-body { display: grid; }
-        
-        .data-box { background: #080808; padding: 14px; border-radius: 8px; border-bottom: 1px solid #222; word-break: break-all; }
-        .data-box label { display: block; font-size: 11px; color: var(--accent); font-weight: bold; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1.2px; }
-        .data-box span { color: #fff; line-height: 1.8; }
-        
-        .data-box span a { 
-            display: block; 
-            color: var(--accent); 
-            text-decoration: none; 
-            padding: 5px 0;
-            border-bottom: 1px solid rgba(100, 149, 237, 0.1);
-            font-size: 15px;
-        }
-        .data-box span a:last-child { border-bottom: none; }
-        .data-box span a:before { content: "• "; color: var(--gold); font-weight: bold; }
-        .data-box span a:hover { color: #fff; background: rgba(255,255,255,0.05); }
-
+        .data-box { background: #080808; padding: 14px; border-radius: 8px; border: 1px solid #222; word-break: break-all; }
+        .data-box label { display: block; font-size: 10px; color: var(--accent); font-weight: bold; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.8; }
+        .data-box span { color: #fff; line-height: 1.6; font-size: 13px; }
         .data-box.gold span { color: var(--gold); font-weight: bold; }
-
-        .btn { background: var(--accent); color: white; border: none; padding: 14px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
-        .btn-ig { background: linear-gradient(45deg, #f09433, #bc1888); }
-        .btn-global { background: linear-gradient(45deg, #2c3e50, #000000); border: 1px solid #333; }
+        .data-box span a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted rgba(100,149,237,0.3); }
         
-        #ctx-menu { position: fixed; display: none; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; z-index: 5000; min-width: 220px; box-shadow: 0 10px 40px #000; }
-        .ctx-item { padding: 12px 18px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #222; }
+        /* Sidebar & Context Menu */
+        .hist-card { background: #111; padding: 10px; border-radius: 6px; margin-bottom: 10px; cursor: pointer; border: 1px solid #222; transition: 0.2s; }
+        .hist-card:hover { border-color: var(--accent); background: #1a1a1a; }
+        #ctx-menu { position: fixed; display: none; background: #161616; border: 1px solid #333; border-radius: 6px; z-index: 5000; min-width: 200px; box-shadow: 0 10px 30px #000; }
+        .ctx-item { padding: 12px 18px; cursor: pointer; font-size: 14px; border-bottom: 1px solid #222; color: #ddd; }
         .ctx-item:hover { background: var(--accent); color: #fff; }
 
-        .hist-card { background: #1a1a1a; padding: 12px; border-radius: 8px; margin-bottom: 12px; cursor: pointer; border: 1px solid transparent; }
-        .hist-card:hover { border-color: var(--accent); }
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
     </style>
 </head>
@@ -277,81 +310,214 @@ HTML_UI = r"""
                 <div class="crypto-card"><label>BITCOIN (BTC)</label><code>bc1qfn9kynt7k26eaxk4tc67q2hjuzhfcmutzq2q6a</code></div>
                 <div class="crypto-card"><label>TON (Telegram Open Network)</label><code>UQBtLB6m-7q8j9Y81FeccBEjccvl34Ag5tWaUD</code></div>
             </div>
+            
             <p style="margin-top: 30px; font-size: 10px; opacity: 0.5;">© 2025 CScorza Investigation</p>
         </div>
     </div>
 
     <div id="dashboard">
         <div id="sidebar">
-            <h4 style="text-align:center; color:var(--accent); letter-spacing:2px; font-size:12px;">CRONOLOGIA TARGET</h4>
+            <h4 style="text-align:center; color:var(--accent); letter-spacing:2px; font-size:12px; margin-bottom:20px;">CRONOLOGIA TARGET</h4>
             <div id="hist-list" style="flex:1; overflow-y:auto;"></div>
             <div style="border-top:1px solid #222; padding-top:15px;">
-                <select id="export-format" style="width:100%; margin-bottom:10px; background:#000; color:white; border:1px solid #333; padding:8px;">
+                <select id="export-format" style="width:100%; margin-bottom:10px; background:#111; color:white; border:1px solid #333; padding:10px; border-radius:4px;">
                     <option value="word">Word Report Intelligence (.docx)</option>
                     <option value="pdf">PDF Report Intelligence (.pdf)</option>
                     <option value="excel">Excel Data Matrix (.xlsx)</option>
                 </select>
-                <button class="btn" onclick="buildReport()" style="width:100%; background:#2e7d32; margin-bottom:5px;">📋 GENERA REPORT </button>
-                <button class="btn" onclick="location.reload()" style="width:100%; background:#800;">🗑️ RESET</button>
+                <button class="btn" onclick="buildReport()" style="width:100%; background:#2e7d32; margin-bottom:10px;">📋 GENERA REPORT </button>
+                <button class="btn" onclick="location.reload()" style="width:100%; background:#800;">🗑️ RESET SYSTEM</button>
             </div>
         </div>
 
         <div id="main-content">
-            <div class="header-brand"><img src="{{logo_url}}"><h2>CScorza InstaOSINT Pro</h2></div>
-            <div class="unified-header">
-                <div class="unified-bar">
-                    <input type="text" id="main-search" class="unified-input" placeholder="User, Phone (+39...) o Target Dork...">
-                    <button class="btn btn-ig" onclick="runSearch('ig')">INSTAGRAM</button>
-                    <button class="btn" onclick="runSearch('phone')">📞 PHONE</button>
-                    <button class="btn btn-global" onclick="runSearch('global')">🌐 SOCIAL SCANNER</button>
-                    <div class="dork-bar">
-                        <select id="dork-engine" onchange="toggleDorkUI()" style="background:#000; color:white; border:1px solid #333; padding:10px;">
+            <div class="header-brand">
+                <img src="{{logo_url}}">
+                <h2>CScorza InstaOSINT Pro</h2>
+            </div>
+            
+            <div class="tabs-nav">
+                <button class="tab-btn active" onclick="switchTab('ig')"><span>📸</span> Instagram</button>
+                <button class="tab-btn" onclick="switchTab('phone')"><span>📞</span> Phone</button>
+                <button class="tab-btn" onclick="switchTab('social')"><span>🌐</span> Social Scanner</button>
+                <button class="tab-btn" onclick="switchTab('dorks')"><span>🔎</span> Dorks</button>
+            </div>
+
+            <div id="progress-container"><div id="progress-bar"></div></div>
+
+            <div id="tab-ig" class="tab-content active">
+                <div class="input-group">
+                    <input type="text" id="input-ig" class="main-input" placeholder="Inserisci Username Instagram...">
+                    <button class="btn btn-ig" onclick="runSearch('ig', 'input-ig')">SEARCH INSTAGRAM</button>
+                </div>
+            </div>
+
+            <div id="tab-phone" class="tab-content">
+                <div class="input-group">
+                    <input type="text" id="input-phone" class="main-input" placeholder="Inserisci Numero (es. +39333...)">
+                    <button class="btn btn-phone" onclick="runSearch('phone', 'input-phone')">SEARCH PHONE</button>
+                </div>
+            </div>
+
+            <div id="tab-social" class="tab-content">
+                <div class="input-group">
+                    <input type="text" id="input-social" class="main-input" placeholder="Inserisci Username da scansionare su tutti i social...">
+                    <button class="btn btn-social" onclick="runSearch('global', 'input-social')">SCAN GLOBAL</button>
+                </div>
+                <div class="status-legend">
+                    <div class="legend-item" onclick="filterResults('green', this)"><div class="dot green"></div> <span><b>VERDE:</b> Trovato (Sicuro)</span></div>
+                    <div class="legend-item" onclick="filterResults('yellow', this)"><div class="dot yellow"></div> <span><b>GIALLO:</b> Incerto / Protetto</span></div>
+                    <div class="legend-item" onclick="filterResults('red', this)"><div class="dot red"></div> <span><b>ROSSO:</b> Non Trovato</span></div>
+                    <div class="legend-item" onclick="filterResults('all', this)"><div class="dot blue"></div> <span><b>MOSTRA TUTTI</b></span></div>
+                </div>
+            </div>
+
+            <div id="tab-dorks" class="tab-content">
+                
+                <div class="sub-nav">
+                    <button class="sub-tab-btn active" onclick="loadDorks('social', this)">Social Networks</button>
+                    <button class="sub-tab-btn" onclick="loadDorks('telegram', this)">Telegram Intel</button>
+                    <button class="sub-tab-btn" onclick="loadDorks('files', this)">File & Docs</button>
+                    <button class="sub-tab-btn" onclick="loadDorks('tools', this)">Tools & Utilities</button>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="input-dork" class="main-input" placeholder="Inserisci Keyword o Username per Dorking...">
+                    <button class="btn btn-dork" onclick="execDork()">📡 START DORKS</button>
+                </div>
+
+                <div class="dork-controls">
+                    <select id="dork-preset" class="dork-select">
+                        </select>
+                    <div style="display:flex; gap:10px;">
+                        <select id="dork-engine" onchange="toggleDorkUI()" class="dork-select" style="flex:1;">
                             <option value="google">Google</option>
                             <option value="duckduckgo">DuckDuckGo</option>
                             <option value="bing">Bing</option>
                             <option value="yahoo">Yahoo</option>
                             <option value="yandex">Yandex</option>
                         </select>
-                        <select id="dork-country" disabled style="background:#000; color:white; border:1px solid #333; padding:10px;">
-                            <optgroup label="Europa"><option value="it-it">Italia</option><option value="uk-en">Regno Unito</option><option value="de-de">Germania</option><option value="fr-fr">Francia</option><option value="es-es">Spagna</option><option value="ch-it">Svizzera</option></optgroup>
-                            <optgroup label="Americhe"><option value="us-en">USA</option><option value="ca-en">Canada</option><option value="br-pt">Brasile</option><option value="mx-es">Messico</option></optgroup>
+                        <select id="dork-country" disabled class="dork-select" style="flex:1;">
                             <option value="wt-wt">Global / Worldwide</option>
+                            <option value="it-it">Italia</option>
+                            <option value="uk-en">Regno Unito</option>
+                            <option value="de-de">Germania</option>
+                            <option value="fr-fr">Francia</option>
+                            <option value="es-es">Spagna</option>
+                            <option value="us-en">USA</option>
                         </select>
-                        <select id="dork-preset" style="background:#000; color:white; border:1px solid #333; padding:10px;">
-                            <optgroup label="Social & People Recon">
-                                <option value='site:facebook.com OR site:instagram.com OR site:linkedin.com OR site:twitter.com OR site:tiktok.com "target"'>Tutti i Social</option>
-                                <option value='site:linkedin.com "target"'>LinkedIn Professional</option>
-                                <option value='site:t.me "target"'>Telegram Channels</option>
-                                <option value='site:about.me OR site:gravatar.com "target"'>Profili Bio/Personal</option>
-                            </optgroup>
-                            <optgroup label="Files & Data Leak">
-                                <option value='filetype:pdf "target"'>Documenti PDF</option>
-                                <option value='filetype:xls OR filetype:xlsx "target"'>Database Excel</option>
-                                <option value='filetype:log OR filetype:env OR filetype:conf "target"'>Config & Log (Sensitive)</option>
-                                <option value='filetype:sql "target"'>SQL Database Dumps</option>
-                            </optgroup>
-                            <optgroup label="Archives & Pastes">
-                                <option value='site:pastebin.com OR site:ghostbin.com "target"'>Paste Sites</option>
-                                <option value='site:archive.org "target"'>Web Archives</option>
-                            </optgroup>
-                        </select>
-                        <button class="btn" onclick="execDork()" style="background:#333">📡 LANCIATI DORK</button>
                     </div>
                 </div>
             </div>
-            <div id="progress-container"><div id="progress-bar"></div></div>
-            <div class="results-area"><div id="results-container"></div></div>
+
+            <div class="results-area">
+                <div id="results-container"></div>
+            </div>
         </div>
     </div>
 
     <div id="ctx-menu">
-        <div class="ctx-item" onclick="saveTarget()">💾 Salva in Cronologia</div>
-        <div class="ctx-item" onclick="openProfile()">🔗 Visita Profilo</div>
-        <div class="ctx-item" onclick="downloadProfilePic()">📥 Scarica Immagine</div>
+        <div class="ctx-item" onclick="saveTarget()">💾 Save Target Cronologia</div>
+        <div class="ctx-item" onclick="openProfile()">🔗 View Profile</div>
+        <div class="ctx-item" onclick="downloadProfilePic()">📥 Dowload Image</div>
     </div>
 
     <script>
         let currentData = null; let historyDb = {}; const socialIcons = {{social_map|tojson}};
+
+        // --- DORK DATABASE ---
+        const dorkDB = {
+            'social': [
+                { val: 'site:facebook.com "target"', txt: 'Facebook: Ricerca Profilo' },
+                { val: 'site:instagram.com "target"', txt: 'Instagram: Ricerca Profilo' },
+                { val: 'site:linkedin.com "target"', txt: 'LinkedIn: Profilo Professionale' },
+                { val: 'site:twitter.com "target"', txt: 'Twitter/X: Tweet & Profili' },
+                { val: 'site:tiktok.com "target"', txt: 'TikTok: Profili' },
+                { val: 'site:reddit.com "target"', txt: 'Reddit: Discussioni & User' },
+                { val: 'site:about.me OR site:gravatar.com "target"', txt: 'Bio/Aggregatori Profili' },
+                { val: 'site:facebook.com OR site:instagram.com OR site:linkedin.com OR site:twitter.com "target"', txt: 'ALL SOCIALS SCAN' }
+            ],
+            'telegram': [
+                { val: 'site:t.me "joinchat" "target"', txt: 'Link Invito Gruppi (Joinchat)' },
+                { val: 'site:t.me "group" "target"', txt: 'Gruppi Pubblici (Keyword)' },
+                { val: 'site:t.me "channel" "target"', txt: 'Canali Broadcast (Keyword)' },
+                { val: 'site:t.me "search" "target"', txt: 'Ricerca Globale Entità' },
+                { val: 'site:telegram.me "@target"', txt: 'Username Esatto (@user)' },
+                { val: 'site:t.me "target" intitle:"user"', txt: 'Keyword nel Titolo Utente' },
+                { val: 'site:t.me "data leaks" "target"', txt: 'Data Leak & Breach Intel' },
+                { val: 'site:t.me "phone number" "target"', txt: 'Ricerca Numeri di Telefono' },
+                { val: 'site:t.me "bot" "target"', txt: 'Ricerca Bot Telegram' }
+            ],
+            'files': [
+                { val: 'filetype:pdf "target"', txt: 'Documenti PDF' },
+                { val: 'filetype:xlsx OR filetype:xls "target"', txt: 'Fogli Excel (Database)' },
+                { val: 'filetype:docx OR filetype:doc "target"', txt: 'Documenti Word' },
+                { val: 'filetype:txt "target"', txt: 'File di Testo (Notes/Logs)' },
+                { val: 'filetype:sql "target"', txt: 'Database Dump (.sql)' },
+                { val: 'filetype:env OR filetype:config "target"', txt: 'Config Files (Sensitive)' },
+                { val: 'filetype:log "target"', txt: 'Server Logs' }
+            ],
+            'tools': [
+                { val: 'site:pastebin.com "target"', txt: 'Pastebin (Code/Leaks)' },
+                { val: 'site:github.com "target"', txt: 'GitHub Repositories' },
+                { val: 'site:trello.com "target"', txt: 'Trello Boards' },
+                { val: 'site:archive.org "target"', txt: 'Wayback Machine Archive' },
+                { val: 'site:s3.amazonaws.com "target"', txt: 'Amazon S3 Buckets' }
+            ]
+        };
+
+        // --- TAB SWITCHER ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.onclick.toString().includes(tabName));
+            if(targetBtn) targetBtn.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+
+        // --- FILTER RESULTS FUNCTION ---
+        function filterResults(status, btn) {
+            // Update active visual state
+            document.querySelectorAll('.legend-item').forEach(i => i.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            const cards = document.querySelectorAll('.res-card');
+            cards.forEach(card => {
+                if (status === 'all') {
+                    card.style.display = 'block';
+                } else {
+                    const cardStatus = card.getAttribute('data-status');
+                    if (cardStatus.includes(status)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // --- LOAD DORKS DYNAMICALLY ---
+        function loadDorks(category, btnElement) {
+            // Update Chips UI
+            document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
+            // Populate Select
+            const select = document.getElementById('dork-preset');
+            select.innerHTML = '';
+            const data = dorkDB[category] || [];
+            data.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.val;
+                opt.innerText = item.txt;
+                select.appendChild(opt);
+            });
+        }
+
+        // Init Dorks
+        window.onload = function() {
+           loadDorks('social', document.querySelector('.sub-tab-btn'));
+        };
 
         function linkify(text) {
             const urlRegex = /(https?:\/\/[^\s<,]+)/g;
@@ -385,8 +551,10 @@ HTML_UI = r"""
 
         function toggleDorkUI() { document.getElementById('dork-country').disabled = (document.getElementById('dork-engine').value !== 'duckduckgo'); }
 
-        async function runSearch(mode) {
-            const target = document.getElementById('main-search').value.trim(); if(!target) return;
+        async function runSearch(mode, inputId) {
+            const target = document.getElementById(inputId).value.trim(); 
+            if(!target) return alert("Inserisci un target valido!");
+            
             document.getElementById('results-container').innerHTML = '';
             document.getElementById('progress-container').style.display = 'block';
 
@@ -417,6 +585,13 @@ HTML_UI = r"""
             for(let k in d.info) items += `<div class="data-box ${k.includes('Obf')?'gold':''}"><label>${k}</label><span>${linkify(d.info[k])}</span></div>`;
 
             let platIcon = socialIcons[d.type] ? socialIcons[d.type].icon : (d.type !== "Phone" ? socialIcons["Instagram"].icon : "");
+            
+            // Status Icon Logic
+            let statusClass = '';
+            if (d.status_code === 200) statusClass = 'status-green';
+            else if (d.status_code === 404) statusClass = 'status-red';
+            else statusClass = 'status-yellow';
+
             let statusIconsHtml = '';
             if(d.type === "Phone" || d.info["WhatsApp"]) {
                 const isWa = d.info["WhatsApp"] === "Attivo"; 
@@ -429,7 +604,9 @@ HTML_UI = r"""
 
             const card = document.createElement('div'); 
             card.className = 'res-card';
-            card.onclick = () => card.classList.toggle('open');
+            card.setAttribute('data-status', statusClass); // For filtering
+            
+            // Context menu logic
             card.oncontextmenu = (e) => { 
                 e.preventDefault(); e.stopPropagation();
                 currentData = d; 
@@ -439,14 +616,20 @@ HTML_UI = r"""
 
             card.innerHTML = `
                 <div class="card-top">
-                    <div class="profile-img-container">
-                        <img class="main-pfp" src="${d.main_img}" onerror="this.src='${platIcon || 'https://cdn-icons-png.flaticon.com/512/724/724664.png'}'">
-                        ${platIcon ? `<img src="${platIcon}" class="social-mini-icon">` : ''}
+                    <div class="card-trigger" onclick="this.parentElement.parentElement.classList.toggle('open')" style="display:flex; align-items:center; gap:18px; flex:1; cursor:pointer;">
+                        <div class="profile-img-container">
+                            <img class="main-pfp ${statusClass}" src="${d.main_img}" onerror="this.src='${platIcon || 'https://cdn-icons-png.flaticon.com/512/724/724664.png'}'">
+                            ${platIcon ? `<img src="${platIcon}" class="social-mini-icon">` : ''}
+                        </div>
+                        <div>
+                            <h3 style="margin:0; color:var(--accent); font-size: 18px;">@${d.username}</h3>
+                            <small style="opacity:0.6; font-size: 12px;">${d.type} Intelligence</small>
+                            ${statusIconsHtml}
+                        </div>
                     </div>
-                    <div>
-                        <h3 style="margin:0; color:var(--accent); font-size: 18px;">@${d.username}</h3>
-                        <small style="opacity:0.6; font-size: 12px;">${d.type} Intelligence</small>
-                        ${statusIconsHtml}
+                    
+                    <div style="margin-left:15px;">
+                        <a href="${d.url}" target="_blank" class="btn-view">View Profile ↗</a>
                     </div>
                 </div>
                 <div class="card-body">${items}</div>
@@ -454,7 +637,9 @@ HTML_UI = r"""
             container.prepend(card);
         }
 
-        document.onclick = () => document.getElementById('ctx-menu').style.display = 'none';
+        document.onclick = (e) => {
+            document.getElementById('ctx-menu').style.display = 'none';
+        };
 
         function saveTarget() {
             const id = "H_" + Date.now(); historyDb[id] = currentData; const list = document.getElementById('hist-list');
@@ -467,10 +652,13 @@ HTML_UI = r"""
         function openProfile() { if(currentData.url) window.open(currentData.url, '_blank'); }
         
         function execDork() { 
-            const t = document.getElementById('main-search').value; 
+            const t = document.getElementById('input-dork').value; 
             const e = document.getElementById('dork-engine').value; 
             const c = document.getElementById('dork-country').value; 
             const p = document.getElementById('dork-preset').value; 
+            
+            if(!t) return alert("Inserisci una keyword per i Dork!");
+
             let query = p.replace('target', t);
             let url = "";
             if(e === 'google') url = `https://www.google.it/search?q=${encodeURIComponent(query)}`;
@@ -489,6 +677,10 @@ HTML_UI = r"""
             const blob = await r.blob(); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); 
             a.download = `Report Intelligence.${format === 'excel' ? 'xlsx' : (format === 'word' ? 'docx' : 'pdf')}`; a.click();
         }
+
+        window.onerror = function(msg, url, line) {
+            console.error("JS Error: " + msg);
+        };
     </script>
 </body>
 </html>
@@ -513,18 +705,78 @@ def get_b64_image(url_or_bytes):
 
 def scrape_metadata(url, platform_name=""):
     try:
-        r = session.get(url, timeout=7, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OSINT-Bot/2.1"})
+        # User Agent simulato per evitare blocchi base
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"}
+        r = session.get(url, timeout=8, headers=headers)
         html = r.text
+        status = r.status_code
+        
+        # --- ESTRAZIONE GENERICA ---
         img = re.search(r'property="(?:og:image|twitter:image)"\s+content="([^"]+)"', html)
-        desc = re.search(r'property="(?:og:description|twitter:description)"\s+content="([^"]+)"', html)
+        desc = re.search(r'property="(?:og:description|twitter:description|description)"\s+content="([^"]+)"', html)
+        if not desc: desc = re.search(r'name="description"\s+content="([^"]+)"', html)
         title = re.search(r'<title>(.*?)</title>', html)
+        
+        # Regex per contatti (sempre utile)
+        emails = list(set(re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', html[:50000])))
+        phones = list(set(re.findall(r'(?:\+|00)\d[\d -]{8,12}\d', html[:50000])))
+        
         pfp = get_b64_image(img.group(1)) if img else ""
-        meta_dict = {"Bio/Descrizione": (desc.group(1) if desc else "N/D")}
-        if title: meta_dict["Titolo Pagina"] = title.group(1).strip()
-        emails_found = list(set(re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', html[:25000])))
-        if emails_found: meta_dict["Email Rilevate"] = " ".join(emails_found[:5])
-        return pfp, meta_dict
-    except: return "", {"Stato": "Profilo attivo (Errore analisi)"}
+        meta_dict = {}
+
+        # --- ESTRAZIONE SPECIFICA PER PIATTAFORMA ---
+        
+        if platform_name == "TikTok":
+            # TikTok mette likes e followers nella description
+            # Ex: "User (@name) on TikTok | X Likes. Y Followers."
+            if desc:
+                d_text = desc.group(1)
+                likes = re.search(r'([\d\.]+[KkMm]?) Likes', d_text)
+                followers = re.search(r'([\d\.]+[KkMm]?) Followers', d_text)
+                meta_dict["TikTok Likes"] = likes.group(1) if likes else "N/D"
+                meta_dict["TikTok Followers"] = followers.group(1) if followers else "N/D"
+            meta_dict["Bio"] = "Profilo TikTok rilevato"
+
+        elif platform_name == "GitHub":
+            # GitHub Title: "Name (Username) · GitHub"
+            if title:
+                full_name_gh = title.group(1).split('(')[0].strip()
+                meta_dict["Nome Completo"] = full_name_gh
+            # GitHub bio class
+            # Tentativo di regex brutale su meta
+            repos = re.search(r'([\d]+) repositories', html)
+            if repos: meta_dict["Repository Pubblici"] = repos.group(1)
+            
+        elif platform_name == "YouTube":
+            # YouTube description often has "Share your videos..." but channel pages have sub count
+            # Ex: "... subscribers"
+            subs = re.search(r'("subscriberCountText":".*?")', html) 
+            if subs: 
+                # Cleaning crudele del json
+                clean_subs = subs.group(1).split('"simpleText":"')[1].split('"')[0]
+                meta_dict["Iscritti"] = clean_subs
+            meta_dict["Canale"] = title.group(1).replace(" - YouTube", "") if title else "N/D"
+
+        elif platform_name == "Twitter/X":
+            if desc:
+                meta_dict["Ultimo Tweet/Bio"] = desc.group(1)[:100] + "..."
+        
+        elif platform_name == "Pinterest":
+            followers_pin = re.search(r'([\d\.]+[k]?) Followers', html)
+            if followers_pin: meta_dict["Followers"] = followers_pin.group(1)
+
+        else:
+            # Fallback generico
+            meta_dict["Descrizione"] = (desc.group(1) if desc else "N/D")
+
+        # Aggiunta contatti generici trovati
+        if title and "Nome Completo" not in meta_dict: 
+            meta_dict["Titolo Pagina"] = title.group(1).strip()
+        if emails: meta_dict["Email Rilevate"] = ", ".join(emails[:2])
+        if phones: meta_dict["Telefoni Rilevati"] = ", ".join(phones[:2])
+
+        return pfp, meta_dict, status
+    except: return "", {"Stato": "Errore Connessione/Timeout"}, 404
 
 @app.route('/api/search', methods=['POST'])
 def search_logic():
@@ -532,27 +784,33 @@ def search_logic():
     try:
         cookies = {"sessionid": core.creds['sid']} if core.creds['sid'] else {}
         headers_ig = {"X-IG-App-ID": APP_ID_WEBPROFILE, "User-Agent": "Instagram 292.0.0.17.111 Android"}
+        
         if mode == 'ig' or (mode == 'single' and data.get('platform') == 'Instagram'):
             r = session.get(f"https://i.instagram.com/api/v1/users/web_profile_info/?username={target}", headers=headers_ig, cookies=cookies, timeout=10)
             u = r.json().get('data', {}).get('user')
-            if not u: return jsonify({"Error": "Not found"})
+            if not u: return jsonify({"Error": "Not found", "status_code": 404})
             lookup = core.instagram_lookup(target)
             info = {"Nome": u.get('full_name'), "ID": u.get('id'), "Followers": u.get('edge_followed_by', {}).get('count'), "Privacy": "🔒 Privato" if u.get('is_private') else "🔓 Pubblico", "Link Bio": u.get('external_url') or "Nessuno", "Email Obf": lookup.get('Email Obf', 'N/A'), "Phone Obf": lookup.get('Phone Obf', 'N/A')}
-            return jsonify({"username": u['username'], "type": "Instagram", "url": f"https://instagram.com/{target}", "main_img": get_b64_image(u.get('profile_pic_url_hd')), "info": info})
+            return jsonify({"username": u['username'], "type": "Instagram", "url": f"https://instagram.com/{target}", "main_img": get_b64_image(u.get('profile_pic_url_hd')), "info": info, "status_code": 200})
+        
         elif mode == 'single':
             config = SOCIAL_MAP.get(data.get('platform'))
             url = f"https://www.{config['base']}{target}"
-            resp = session.get(url, timeout=5)
-            if resp.status_code == 200:
-                img, meta_data = scrape_metadata(url, data.get('platform'))
-                return jsonify({"username": target, "type": data.get('platform'), "url": url, "main_img": img if img else config["icon"], "info": meta_data})
-            return jsonify({"Error": "Not found"})
+            img, meta_data, status_code = scrape_metadata(url, data.get('platform'))
+            
+            # Filter: If searching globally, we might want to skip 404s in the UI logic or let the frontend handle it
+            if status_code == 404 and mode == 'global':
+                 return jsonify({"Error": "Not found", "status_code": 404})
+
+            return jsonify({"username": target, "type": data.get('platform'), "url": url, "main_img": img if img else config["icon"], "info": meta_data, "status_code": status_code})
+        
         elif mode == 'phone':
             clean = target if target.startswith('+') else '+' + target
             p = phonenumbers.parse(clean); c_name = geocoder.description_for_number(p, "it")
-            res = {"username": target, "type": "Phone", "url": f"https://wa.me/{target.replace('+','')}", "main_img": "https://cdn-icons-png.flaticon.com/512/724/724664.png", "info": {"Nazione": c_name, "Operatore": carrier.name_for_number(p, "it"), "WhatsApp": "Attivo"}}
+            res = {"username": target, "type": "Phone", "url": f"https://wa.me/{target.replace('+','')}", "main_img": "https://cdn-icons-png.flaticon.com/512/724/724664.png", "info": {"Nazione": c_name, "Operatore": carrier.name_for_number(p, "it"), "WhatsApp": "Attivo"}, "status_code": 200}
             return jsonify(res)
-    except Exception as e: return jsonify({"Error": str(e)})
+            
+    except Exception as e: return jsonify({"Error": str(e), "status_code": 500})
 
 @app.route('/api/export', methods=['POST'])
 def export_report():
@@ -603,5 +861,11 @@ def export_report():
         return send_file(buf, download_name="Data.xlsx", as_attachment=True)
 
 if __name__ == "__main__":
-    threading.Thread(target=lambda: (time.sleep(2), webbrowser.open("http://127.0.0.1:5050")), daemon=True).start()
-    app.run(port=5050)
+    try:
+        threading.Thread(target=lambda: (time.sleep(2), webbrowser.open("http://127.0.0.1:5050")), daemon=True).start()
+        print("AVVIO SERVER IN CORSO... (Attendi l'apertura del browser)")
+        app.run(port=5050)
+    except Exception as e:
+        print(f"ERRORE CRITICO ALL'AVVIO: {e}")
+        input("Premi INVIO per chiudere...")
+
