@@ -7,7 +7,7 @@ Il tool offre un'interfaccia web moderna per centralizzare la ricerca di informa
 
 *Advanced Open Source Intelligence (OSINT) framework developed for digital investigators and cybersecurity enthusiasts. The tool offers a modern web interface to centralize information gathering across over 40 social platforms, phone numbers, and Instagram profiles.*
 
-<img width="1677" height="765" alt="image" src="https://github.com/user-attachments/assets/79fa5bdf-404a-4276-b218-114eb84e419c" />
+<img width="1683" height="721" alt="image" src="https://github.com/user-attachments/assets/db0b4a74-aa6a-4298-a075-2c6e9ab6e1bd" />
 
 ### 🚀 Caratteristiche Principali | Key Features
 
@@ -91,10 +91,10 @@ These parameters are required for scanning phone numbers using the Telethon libr
 
 ```
 
-###🐧 Linux (Ambiente Ottimizzato)
+###🐧Linux (Ambiente Ottimizzato)
 Il tool è stato testato e ottimizzato per distribuzioni Linux.The tool has been tested and optimized for Linux distributions.
 
-**CScorza OSINT Specialist
+**CScorza OSINT Specialist**
 
 |GitHub:|CScorza|
 | :--- | :--- |
