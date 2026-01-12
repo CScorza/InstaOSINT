@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-CScorza InstaOSINT Pro V2.3 - Search Intelligence Pro
+CScorza InstaOSINT Pro V2.3 - OSINT Intelligence Pro
 Developed by: CScorza OSINT Specialist
 Version: 2.3 (2025 Blue Web, Grid Layout, Filtering & Deep Scraper)
 """
@@ -705,129 +705,177 @@ def get_b64_image(url_or_bytes):
 
 def scrape_metadata(url, platform_name=""):
     try:
-        # User Agent simulato desktop (importante per vedere il sito completo)
+        # Headers simulati desktop per ottenere la pagina completa
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9" # Inglese per standardizzare i regex (followers, following)
+            "Accept-Language": "en-US,en;q=0.9"
         }
         r = session.get(url, timeout=10, headers=headers)
+        r.encoding = r.apparent_encoding # Fix per caratteri speciali/emoji
         html = r.text
         status = r.status_code
         
-        # --- ESTRAZIONE BASE ---
-        # Immagine profilo
+        # --- 1. ESTRAZIONE DATI GREZZI (UNIVERSALE) ---
+        # Immagine
         img = re.search(r'property="(?:og:image|twitter:image)"\s+content="([^"]+)"', html)
-        if not img: img = re.search(r'class="avatar[^"]*"\s+src="([^"]+)"', html) # Fallback per GitHub/altri
+        if not img: img = re.search(r'link\s+rel="image_src"\s+href="([^"]+)"', html)
         
-        # Descrizione/Bio
-        desc = re.search(r'property="(?:og:description|twitter:description|description)"\s+content="([^"]+)"', html)
-        if not desc: desc = re.search(r'name="description"\s+content="([^"]+)"', html)
+        # Descrizione/Bio (Priorità a og:description)
+        desc_match = re.search(r'property="(?:og:description|twitter:description|description)"\s+content="([^"]+)"', html)
+        if not desc_match: desc_match = re.search(r'name="description"\s+content="([^"]+)"', html)
+        raw_desc = desc_match.group(1).strip() if desc_match else ""
         
-        # Titolo
-        title = re.search(r'<title>(.*?)</title>', html)
+        # Titolo Pagina (Spesso contiene il Nome Reale)
+        title_match = re.search(r'property="(?:og:title|twitter:title)"\s+content="([^"]+)"', html)
+        if not title_match: title_match = re.search(r'<title>(.*?)</title>', html)
+        raw_title = title_match.group(1).strip() if title_match else ""
+
+        # --- 2. PULIZIA E NORMALIZZAZIONE ---
+        # Rimuove suffissi standard dai titoli (es. "Mario Rossi | LinkedIn")
+        clean_name = raw_title
+        for suffix in [" | LinkedIn", " | Facebook", " on TikTok", " (@", " - YouTube", " • Instagram photos", " on Pinterest", " - GitHub"]:
+            clean_name = clean_name.split(suffix)[0]
         
         pfp = get_b64_image(img.group(1)) if img else ""
-        meta_dict = {}
+        
+        # Dizionario temporaneo
+        extracted = {}
 
-        # --- ESTRAZIONE CONTATTI E LINK (DEEP SCRAPER UNIVERSALE) ---
-        # Cerca email nel testo (limitato ai primi 50k caratteri per performance)
-        emails = list(set(re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', html[:50000])))
-        if emails: meta_dict["📧 Email Rilevate"] = ", ".join(emails[:3])
-
-        # Cerca link esterni nella bio (semplificata)
-        bio_text = desc.group(1) if desc else ""
-        links = re.findall(r'(https?://(?:www\.)?[\w-]+\.[\w.-]+[^\s<"]*)', bio_text)
-        # Filtra i link che appartengono allo stesso dominio per evitare falsi positivi
-        domain = urlparse(url).netloc.replace('www.', '')
-        external_links = [l for l in links if domain not in l]
-        if external_links: meta_dict["🔗 Link in Bio"] = ", ".join(list(set(external_links))[:3])
-
-        # --- ESTRAZIONE SPECIFICA PER PIATTAFORMA (TABLE LOGIC) ---
+        # --- 3. ESTRAZIONE SPECIFICA PER PIATTAFORMA ---
         
         if platform_name == "GitHub":
-            if title: meta_dict["👤 Nome"] = title.group(1).split('(')[0].replace('GitHub -', '').strip()
-            followers = re.search(r'([0-9k\.]+)\s*<span[^>]*>\s*followers', html, re.IGNORECASE)
-            if followers: meta_dict["👥 Followers"] = followers.group(1).strip()
-            works = re.search(r'works for ([^<"]+)', html, re.IGNORECASE)
-            if works: meta_dict["🏢 Azienda"] = works.group(1).strip()
+            extracted["👤 Nome Visualizzato"] = clean_name
+            
+            # Repos, Followers, Following, Stars
             repos = re.search(r'Repositories\s*<span[^>]*>(\d+)', html)
-            if repos: meta_dict["📚 Repositories"] = repos.group(1)
+            followers = re.search(r'([0-9k\.]+)\s*<span[^>]*>\s*followers', html, re.IGNORECASE)
+            following = re.search(r'([0-9k\.]+)\s*<span[^>]*>\s*following', html, re.IGNORECASE)
+            
+            if repos: extracted["📚 Repository"] = repos.group(1)
+            if followers: extracted["👥 Followers"] = followers.group(1)
+            if following: extracted["👣 Following"] = following.group(1)
+            
+            # Dettagli Sidebar
+            works = re.search(r'works for ([^<"]+)', html, re.IGNORECASE)
+            if works: extracted["🏢 Azienda"] = works.group(1).strip()
             location = re.search(r'itemprop="homeLocation"[^>]*>([^<]+)', html)
-            if location: meta_dict["📍 Location"] = location.group(1).strip()
+            if location: extracted["📍 Location"] = location.group(1).strip()
+            website = re.search(r'<a[^>]*rel="nofollow me"[^>]*>(.*?)</a>', html)
+            if website: extracted["🌐 Sito Web"] = website.group(1).strip()
 
         elif platform_name == "TikTok":
-            if desc:
-                d_text = desc.group(1)
-                likes = re.search(r'([\d\.]+[KkMm]?)\s*Likes', d_text)
-                followers = re.search(r'([\d\.]+[KkMm]?)\s*Followers', d_text)
-                if likes: meta_dict["❤️ Likes"] = likes.group(1)
-                if followers: meta_dict["👥 Followers"] = followers.group(1)
-            meta_dict["ℹ️ Bio"] = "Profilo TikTok rilevato"
+            extracted["👤 Nome"] = clean_name
+            # Regex specifica per la description di TikTok: "X Likes. Y Followers."
+            likes = re.search(r'([\d\.]+[KkMm]?)\s*Likes', raw_desc)
+            followers = re.search(r'([\d\.]+[KkMm]?)\s*Followers', raw_desc)
+            if likes: extracted["❤️ Likes"] = likes.group(1)
+            if followers: extracted["👥 Followers"] = followers.group(1)
+            # La bio è spesso la parte rimanente della description
+            bio_part = raw_desc.split('"')[1] if '"' in raw_desc else raw_desc
+            extracted["📝 Bio"] = bio_part
+
+        elif platform_name == "Instagram": 
+            # Fallback web scraping se l'API fallisce o per ricerca diretta
+            extracted["👤 Nome"] = clean_name
+            stats = re.search(r'content="([0-9,.]+[kmKM]?)\s*Followers,\s*([0-9,.]+[kmKM]?)\s*Following,\s*([0-9,.]+[kmKM]?)\s*Posts', html)
+            if stats:
+                extracted["👥 Followers"] = stats.group(1)
+                extracted["👣 Following"] = stats.group(2)
+                extracted["📸 Post"] = stats.group(3)
+            extracted["📝 Bio"] = raw_desc[:150] + "..."
 
         elif platform_name == "YouTube":
+            extracted["📺 Canale"] = clean_name
+            # Iscritti dal JSON interno o descrizione
             subs = re.search(r'("subscriberCountText":".*?")', html) 
             if subs: 
-                clean_subs = subs.group(1).split('"simpleText":"')[1].split('"')[0]
-                meta_dict["👥 Iscritti"] = clean_subs
-            meta_dict["📺 Canale"] = title.group(1).replace(" - YouTube", "") if title else "N/D"
+                clean_subs = subs.group(1).split('"simpleText":"')[1].split('"')[0].replace(" subscribers", "")
+                extracted["👥 Iscritti"] = clean_subs
+            views = re.search(r'viewCountText".*?"simpleText":"(.*?)"', html)
+            if views: extracted["👁️ Visualizzazioni Totali"] = views.group(1)
+            extracted["📝 Descrizione"] = raw_desc[:200] + "..."
 
         elif platform_name == "Twitter/X":
-            if desc:
-                bio = desc.group(1)
-                meta_dict["📝 Bio"] = bio[:150] + "..."
-                if "Followers" in bio: meta_dict["Analisi"] = "Dati presenti in Bio"
+            extracted["👤 Nome"] = clean_name.replace("X", "").strip()
+            extracted["📝 Bio"] = raw_desc
+            if "Location" in html: extracted["📍 Location"] = "Presente (Vedi Bio)"
+
+        elif platform_name == "Facebook":
+            extracted["👤 Nome"] = clean_name
+            likes = re.search(r'([0-9,.]+[KkMm]?)\s*likes', raw_desc)
+            followers = re.search(r'([0-9,.]+[KkMm]?)\s*followers', raw_desc)
+            if likes: extracted["👍 Likes"] = likes.group(1)
+            if followers: extracted["👥 Followers"] = followers.group(1)
+            extracted["ℹ️ Info"] = raw_desc[:150]
 
         elif platform_name == "LinkedIn":
-            # LinkedIn è difficile da scrapare senza login, ma spesso i meta tag hanno info base
-            if title: meta_dict["👤 Titolo/Nome"] = title.group(1).split('|')[0].strip()
-            if desc: meta_dict["📝 Sommario"] = desc.group(1)[:150] + "..."
+            extracted["👤 Profilo"] = clean_name
+            # LinkedIn mette il titolo lavorativo nel titolo pagina o descrizione
+            extracted["💼 Titolo/Sommario"] = raw_desc[:200] + "..."
 
-        elif platform_name == "Reddit":
-            # Cerca Karma o Cake Day
-            karma = re.search(r'"totalKarma":(\d+)', html)
-            if karma: meta_dict["🌟 Karma"] = karma.group(1)
-            created = re.search(r'"created":([\d\.]+)', html)
-            if created: meta_dict["📅 Data Creazione"] = "Rilevata (Timestamp)"
-
-        elif platform_name == "Twitch":
-            followers = re.search(r'"followers":{"total":(\d+)', html)
-            if not followers: followers = re.search(r'([\d\.,]+[kKmM]?)\s*followers', html, re.IGNORECASE)
-            if followers: meta_dict["👥 Followers"] = followers.group(1)
-
-        elif platform_name == "SoundCloud":
-            tracks = re.search(r'"track_count":(\d+)', html)
-            if tracks: meta_dict["🎵 Tracce"] = tracks.group(1)
-            followers = re.search(r'"followers_count":(\d+)', html)
-            if followers: meta_dict["👥 Followers"] = followers.group(1)
-
-        elif platform_name == "Medium":
-            following = re.search(r'Following\s*(\d+)', html)
-            if following: meta_dict["👣 Following"] = following.group(1)
-
-        elif platform_name == "Steam":
-            level = re.search(r'class="friendPlayerLevelNum">(\d+)', html)
-            if level: meta_dict["🎮 Livello Steam"] = level.group(1)
-            games = re.search(r'Recent Activity', html)
-            if games: meta_dict["🕹️ Attività"] = "Profilo con giochi recenti"
-
-        elif platform_name == "Gravatar" or platform_name == "About.me":
-            # Aggregatori: estraiamo tutti i link possibili
-            meta_dict["🔗 Social Collegati"] = "Vedi sezione Link in Bio"
+        elif platform_name == "Pinterest":
+            extracted["👤 Nome"] = clean_name
+            followers = re.search(r'([\d\.]+[k]?) Followers', html)
+            if followers: extracted["👥 Followers"] = followers.group(1)
+            extracted["📝 Bio"] = raw_desc
 
         else:
-            # --- FALLBACK EURISTICO UNIVERSALE ---
-            # Cerca pattern numerici vicini a parole chiave comuni
-            text_scan = (desc.group(1) if desc else "") + " " + (title.group(1) if title else "")
+            # --- INTELLIGENZA EURISTICA (FALLBACK) ---
+            # Cerca di capire cosa è cosa in base al contesto
+            extracted["🏷️ Titolo Pagina"] = clean_name
             
-            f_match = re.search(r'([\d\.,]+[kKmM]?)\s*(?:Followers|followers|Iscritti)', text_scan)
-            fw_match = re.search(r'([\d\.,]+[kKmM]?)\s*(?:Following|following)', text_scan)
+            # Cerca numeri seguiti da parole chiave nel testo grezzo
+            full_text = (raw_title + " " + raw_desc)
             
-            if f_match: meta_dict["👥 Followers (Est.)"] = f_match.group(1)
-            if fw_match: meta_dict["👣 Following (Est.)"] = fw_match.group(1)
+            f_match = re.search(r'([\d\.,]+[kKmM]?)\s*(?:Followers|followers|Iscritti|Abonnés)', full_text)
+            fw_match = re.search(r'([\d\.,]+[kKmM]?)\s*(?:Following|following)', full_text)
+            lk_match = re.search(r'([\d\.,]+[kKmM]?)\s*(?:Likes|Mi piace)', full_text)
             
-            meta_dict["📝 Descrizione"] = (desc.group(1)[:100] + "...") if desc else "N/D"
+            if f_match: extracted["👥 Followers (Est.)"] = f_match.group(1)
+            if fw_match: extracted["👣 Following (Est.)"] = fw_match.group(1)
+            if lk_match: extracted["❤️ Likes (Est.)"] = lk_match.group(1)
+            
+            if raw_desc and len(raw_desc) > 5:
+                extracted["📝 Descrizione"] = raw_desc[:150] + "..."
 
-        return pfp, meta_dict, status
+        # --- 4. ESTRAZIONE CONTATTI (RUN SEMPRE) ---
+        # Eseguito alla fine per appenderli in fondo
+        
+        # Email Regex
+        emails = list(set(re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', html[:50000])))
+        if emails: extracted["📧 Email Rilevate"] = ", ".join(emails[:3])
+
+        # Link Esterni Regex (esclude il dominio stesso)
+        current_domain = urlparse(url).netloc.replace('www.', '')
+        links = re.findall(r'(https?://(?:www\.)?[\w-]+\.[\w.-]+[^\s<"]*)', raw_desc)
+        ext_links = [l for l in links if current_domain not in l and "facebook" not in l and "google" not in l] # Filtro base
+        if ext_links: extracted["🔗 Link in Bio"] = ", ".join(list(set(ext_links))[:3])
+
+        # --- 5. ORDINAMENTO LOGICO PER VISUALIZZAZIONE ---
+        # Creiamo un nuovo dizionario ordinato per la UI
+        final_ordered = {}
+        
+        # Gruppo 1: Identità
+        for k in ["👤 Nome", "👤 Nome Visualizzato", "👤 Profilo", "📺 Canale", "🏷️ Titolo Pagina"]:
+            if k in extracted: final_ordered[k] = extracted.pop(k)
+            
+        # Gruppo 2: Metriche
+        for k in ["👥 Followers", "👥 Iscritti", "👣 Following", "❤️ Likes", "👍 Likes", "📚 Repository", "📸 Post", "👥 Followers (Est.)"]:
+            if k in extracted: final_ordered[k] = extracted.pop(k)
+            
+        # Gruppo 3: Contesto (Lavoro, Luogo)
+        for k in ["🏢 Azienda", "💼 Titolo/Sommario", "📍 Location", "🌐 Sito Web"]:
+            if k in extracted: final_ordered[k] = extracted.pop(k)
+            
+        # Gruppo 4: Contenuto (Bio)
+        for k in ["📝 Bio", "📝 Descrizione", "ℹ️ Bio", "ℹ️ Info"]:
+            if k in extracted: final_ordered[k] = extracted.pop(k)
+            
+        # Gruppo 5: Contatti (Resto)
+        final_ordered.update(extracted) # Aggiunge tutto ciò che rimane (Email, Link, ecc.)
+
+        return pfp, final_ordered, status
+        
     except Exception as e: 
         return "", {"⚠️ Errore": f"Scraping fallito: {str(e)}"}, 404
 
@@ -839,7 +887,7 @@ def search_logic():
         headers_ig = {"X-IG-App-ID": APP_ID_WEBPROFILE, "User-Agent": "Instagram 292.0.0.17.111 Android"}
         
         if mode == 'ig' or (mode == 'single' and data.get('platform') == 'Instagram'):
-            # (Codice Instagram API esistente...)
+            # (Codice Instagram esistente...)
             r = session.get(f"https://i.instagram.com/api/v1/users/web_profile_info/?username={target}", headers=headers_ig, cookies=cookies, timeout=10)
             u = r.json().get('data', {}).get('user')
             if not u: return jsonify({"Error": "Not found", "status_code": 404})
@@ -848,7 +896,7 @@ def search_logic():
                 "Nome": u.get('full_name'), 
                 "ID": u.get('id'), 
                 "👥 Followers": u.get('edge_followed_by', {}).get('count'), 
-                "👣 Following": u.get('edge_follow', {}).get('count'),
+                "👣 Following": u.get('edge_follow', {}).get('count'), # Aggiunto Following
                 "Privacy": "🔒 Privato" if u.get('is_private') else "🔓 Pubblico", 
                 "🔗 Link Bio": u.get('external_url') or "Nessuno", 
                 "Email Obf": lookup.get('Email Obf', 'N/A'), 
@@ -861,7 +909,7 @@ def search_logic():
             config = SOCIAL_MAP.get(data.get('platform'))
             url = f"https://www.{config['base']}{target}"
             
-            # Chiamata alla nuova funzione scrape_metadata che ora include la logica della tabella
+            # Chiamata alla nuova funzione scrape_metadata
             img, meta_data, status_code = scrape_metadata(url, data.get('platform'))
             
             if status_code == 404 and mode == 'global':
@@ -872,13 +920,14 @@ def search_logic():
                 "type": data.get('platform'), 
                 "url": url, 
                 "main_img": img if img else config["icon"], 
-                "info": meta_data, 
+                "info": meta_data, # Ora contiene i dati arricchiti
                 "status_code": status_code
             })
             
         elif mode == 'phone':
             # --- PHONE INTELLIGENCE PRO (Insta, Amazon, Snap, WA) ---
             target = target.strip()
+            # Assicura prefisso internazionale (default Italia +39 se manca)
             clean = target if target.startswith('+') else ('+39' + target if not target.startswith('00') else '+' + target.lstrip('00'))
             
             try:
@@ -892,7 +941,7 @@ def search_logic():
                 e164_format = phonenumbers.format_number(p, phonenumbers.PhoneNumberFormat.E164)
                 nat_format = phonenumbers.format_number(p, phonenumbers.PhoneNumberFormat.NATIONAL)
                 
-                # 2. Generazione Link OSINT per Enumerazione Account
+                # 2. Generazione Link OSINT per Enumerazione Account (Recovery Check)
                 wa_url = f"https://wa.me/{clean.replace('+','')}"
                 tg_url = f"https://t.me/+{clean.replace('+','')}"
                 amz_url = "https://www.amazon.it/ap/forgotpassword?email=" + clean.replace('+','')
@@ -907,6 +956,7 @@ def search_logic():
                     "Operatore": carrier_name,
                     "WhatsApp": "Attivo (Vedi Icona)",
                     "Telegram": "Verifica (Vedi Icona)",
+                    # Link cliccabili nel report:
                     "Check Amazon": amz_url,   
                     "Check Snapchat": snap_url,
                     "Check Instagram": ig_url
@@ -916,7 +966,7 @@ def search_logic():
                     "username": e164_format,
                     "type": "Phone",
                     "url": wa_url,
-                    "main_img": "https://cdn-icons-png.flaticon.com/512/724/724664.png", 
+                    "main_img": "https://cdn-icons-png.flaticon.com/512/724/724664.png", # Icona telefono
                     "info": info_data,
                     "status_code": 200
                 }
