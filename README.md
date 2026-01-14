@@ -47,8 +47,8 @@ Il tool include una funzione di Auto-Setup che gestisce autonomamente l'ambiente
 Clone the repository:
 
 ```
-git clone https://github.com/tuo-username/cscorza-instaosint-pro.git
-cd cscorza-instaosint-pro
+git clone https://github.com/CScorza/InstaOSINT
+cd InstaOSINT
 ```
 Run the script:
 ```
